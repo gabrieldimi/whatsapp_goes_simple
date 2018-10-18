@@ -13,19 +13,28 @@ io.on('connection', function(socket){
   var userOnline;
   var hasRegistrated;
   socket.on("registration", function(name){
-     if (users.name){
+	  var answer = {};
+	  console.log(name + " tried to register")
+	  console.log(users[name])
+     if (!users[name]){
       console.log(name + ' is registered');
       var pair = {};
       pair.connection = socket;
       users.name = pair;
       userOnline = name;
       hasRegistrated = true;
-     }else{
+	  answer.success = true;
+     }else {
        console.log('user name: '+ name +' already exists');
+	   answer.success = false;
+	   answer.msg = name + " already exists";
      }
+	 
+	 socket.emit('registrationStatus', answer);
   });
   socket.on('chat message', function(msg){
     console.log('message: ' + msg);
+	io.emit('chat message', msg);
   });
   socket.on('disconnect', function(){
     if(hasRegistrated){
@@ -36,7 +45,7 @@ io.on('connection', function(socket){
   });
 });
 
-io.emit('some event', { for: 'everyone' });
+//io.emit('some event', { for: 'everyone' });
 
 http.listen(3000, function(){
   console.log('listening on *:3000');
