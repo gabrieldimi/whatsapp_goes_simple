@@ -10,12 +10,16 @@ app.get('/', function(req, res){
 
 io.on('connection', function(socket){
   console.log('a user connected');
+  var userOnline;
+  var hasRegistrated;
   socket.on("registration", function(name){
      if (users.name){
       console.log(name + ' is registered');
       var pair = {};
       pair.connection = socket;
       users.name = pair;
+      userOnline = name;
+      hasRegistrated = true;
      }else{
        console.log('user name: '+ name +' already exists');
      }
@@ -24,8 +28,11 @@ io.on('connection', function(socket){
     console.log('message: ' + msg);
   });
   socket.on('disconnect', function(){
-    delete users[name];
-    console.log(name +' disconnected and deleted');
+    if(hasRegistrated){
+      delete users[userOnline];
+      console.log(userOnline +'has been deleted');
+    }
+    console.log('user disconnected');
   });
 });
 
