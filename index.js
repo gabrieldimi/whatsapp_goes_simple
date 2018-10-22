@@ -20,9 +20,10 @@ io.on('connection', function(socket) {
 		if (!users[name]) {
 			console.log(name + ' is registered');
 			var pair = {};
-			pair.connection = socket;
+			pair.connection = socket.id;
 			users.name = pair;
 			userOnline = name;
+			answer.users = users;
 			hasRegistrated = true;
 			answer.success = true;
 			var newUser = {};
