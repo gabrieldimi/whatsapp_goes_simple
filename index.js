@@ -28,7 +28,7 @@ io.on('connection', function(socket) {
 			var newUser = {};
 			newUser.socketid = socket.id;
 			newUser.name = name;
-			socket.broadcast.emit("newuser",newUser);
+			socket.broadcast.emit('newuser',newUser);
 		} else {
 			console.log('user name: ' + name + ' already exists');
 			answer.success = false;
@@ -53,6 +53,11 @@ io.on('connection', function(socket) {
 		console.log("broadcast: " + userOnline + ": " + data.payload)
 	    socket.broadcast.emit(data.emitName, userOnline + ": " + data.payload);
 	});
+
+	socket.on('privatemessage', function(data){
+		console.log("private message to "+ data.id);
+		io.to(data.id).emit(data.message);
+	}
 });
 
 // io.emit('some event', { for: 'everyone' });
