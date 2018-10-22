@@ -25,6 +25,10 @@ io.on('connection', function(socket) {
 			userOnline = name;
 			hasRegistrated = true;
 			answer.success = true;
+			var newUser = {};
+			newUser.socketid = socket.id;
+			newUser.name = name;
+			socket.broadcast.emit("newuser",newUser);
 		} else {
 			console.log('user name: ' + name + ' already exists');
 			answer.success = false;
