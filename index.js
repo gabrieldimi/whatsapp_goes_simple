@@ -8,6 +8,7 @@ app.get('/', function(req, res) {
 	res.sendFile(__dirname + '/index.html');
 });
 
+
 io.on('connection', function(socket) {
 	console.log('a user connected');
 	var userOnline;
@@ -34,7 +35,7 @@ io.on('connection', function(socket) {
 	});
 	socket.on('chat message', function(msg) {
 		console.log('message: ' + msg);
-		io.emit('chat message', msg);
+		io.emit('chat message', userOnline + ": " + msg);
 	});
 	socket.on('disconnect', function() {
 		if (hasRegistrated) {
@@ -42,6 +43,11 @@ io.on('connection', function(socket) {
 			console.log(userOnline + 'has been deleted');
 		}
 		console.log('user disconnected');
+	});
+	
+	socket.on('broadcast', function(data){
+		console.log("broadcast: " + userOnline + ": " + data.payload)
+	    socket.broadcast.emit(data.emitName, userOnline + ": " + data.payload);
 	});
 });
 
