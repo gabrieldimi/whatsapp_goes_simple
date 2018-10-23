@@ -286,8 +286,8 @@ form button {
 					return false;
 				});
 		
-		socket.on('chat message', function(msg) {
-			$('#messages').append($('<li>').text(msg));
+		socket.on('chat message', function(messageObj) {
+			$('#messages').append($('<li>').text(messageObj.userName + ': ' + messageObj.payload + '\n' + messageObj.time + '\n' + messageObj.date));
 		});
 		
 		socket.on('clientPrivateMessage', function(obj) {
