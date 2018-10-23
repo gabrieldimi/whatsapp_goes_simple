@@ -7,7 +7,7 @@ function formatMessageData(data){
 	messageData.userName = userOnline;
 	messageData.payload = data.payload;
 	var dateObj = new Date();
-	var time = dateObj.getHours() + ":" + dateObj.getMinute()s;
+	var time = dateObj.getHours() + ":" + dateObj.getMinute();
 	var date = dateObj.getYear() + "-" + dateObj.getMonth() + "-" + dateObj.getDay();
 	messageData.time = time;
 	messageData.date = date;
