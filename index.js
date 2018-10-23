@@ -16,16 +16,17 @@ io.on('connection', function(socket) {
 	socket.on("registration", function(name) {
 		var answer = {};
 		console.log(name + " tried to register")
-		console.log(users[name])
-		if (!users[name]) {
+		console.log(users)
+		if (!users[name]) { //Name Global needs to be forbidden, too
 			console.log(name + ' is registered');
 			var pair = {};
+			users[name] = pair;
 			pair.connection = socket.id;
-			users.name = pair;
 			userOnline = name;
 			answer.users = users;
 			hasRegistrated = true;
 			answer.success = true;
+			answer.selfName = name;
 			var newUser = {};
 			newUser.socketid = socket.id;
 			newUser.name = name;
@@ -54,11 +55,11 @@ io.on('connection', function(socket) {
 		console.log("broadcast: " + userOnline + ": " + data.payload)
 	    socket.broadcast.emit(data.emitName, userOnline + ": " + data.payload);
 	});
-
-	socket.on('privatemessage', function(data){
-		console.log("private message to "+ data.id);
-		io.to(data.id).emit(data.message);
-	}
+	
+	socket.on('privatemessage', function(data) {
+		console.log("private message to " + data.id);
+		io.to(data.id).emit('clientPrivateMessage', data);
+	});
 });
 
 // io.emit('some event', { for: 'everyone' });

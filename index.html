@@ -4,7 +4,8 @@
 <title>Socket.IO chat</title>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
-<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel="stylesheet"
+	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <style>
 * {
@@ -72,6 +73,20 @@ form button {
 	background: #eee;
 }
 
+.privateMessage {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+.privateMessage li {
+	padding: 5px 10px;
+}
+
+.privateMessage li:nth-child(odd) {
+	background: #eee;
+}
+
 #overlay {
 	display: none;
 	width: 100%;
@@ -87,14 +102,14 @@ form button {
 }
 
 #messageInput {
-display:table-cell;
-vertical-align:middle;
+	display: table-cell;
+	vertical-align: middle;
 }
 
 /* REGISTRATION OVERLAY */
 #regOverlay {
 	position: fixed;
-	top:0;
+	top: 0;
 	width: 100%;
 	height: 100%;
 	text-align: center;
@@ -134,12 +149,12 @@ vertical-align:middle;
 
 /*JQUERY-UI*/
 #tabs {
-height:90%;
-width:100%;
+	height: 90%;
+	width: 100%;
 }
 
 .ui-tabs {
-padding:0;
+	padding: 0;
 }
 
 .ui-tabs-vertical {
@@ -175,7 +190,7 @@ padding:0;
 	padding: 1em;
 	float: right;
 	/* width: 40em; */
-	width:100%;
+	width: 100%;
 }
 
 .ui-tabs-anchor {
@@ -183,10 +198,27 @@ padding:0;
 }
 </style>
 <script>
-
 	$(function() {
-		
+
+		var nr = 2;
+		function addUser(name, id) {
+			$("#contacts").append(
+					$('<li>').append(
+							$('<a>').attr("href", "#tabs-" + nr).text(name)));
+			var newPanel = $('<div>').attr("id", "tabs-" + nr).append($('<ul>').addClass('privateMessage'))
+			$("#chatBody").append(newPanel)
+			hashmap[name] = {
+				"id":id,
+				"panel":newPanel
+			}
+			nr++;
+		}
+
 		var socket = io();
+		var hashmap = {};
+		var currentSID;
+		var currentPanel;
+		var selfName;
 
 		$('#registration').submit(function() {
 			socket.emit('registration', $('#regInput').val());
@@ -196,107 +228,103 @@ padding:0;
 		socket.on('registrationStatus', function(obj) {
 			console.log(obj);
 			if (obj.success) {
+				selfName = obj.selfName;
+				if (obj.users) {
+					console.log("all known users: ")
+					console.log(obj.users);
+					for ( var key in obj.users) {
+						if (key != selfName) {
+							console.log("adding:")
+							console.log(key)
+							addUser(key, obj.users[key].connection); //connection bad name, server should not send selfName, obj bad name
+						}
+					}
+					$("#tabs").tabs("refresh");
+				}
 				$('#regOverlay').css("display", "none");
 				$('#blurry').css("filter", "none");
 			}
 		});
 
-		$('#messageInput').submit(function() {
-			socket.emit('broadcast', {emitName: "chat message", payload: $('#m').val()});
-			$('#messages').append($('<li>').text($('#m').val()).css({"text-align": "right", "padding-left": "20%"}));
-			$('#m').val('')
-			return false;
-		});
+		$('#messageInput').submit(
+				function() {
+					if (currentSID !== undefined) { //if not Global selected
+						socket.emit('privatemessage', {
+							'id' : currentSID,
+							'message' : $('#m').val(),
+							'sender' : selfName
+						})
+						currentPanel.find(".privateMessage").append(
+								$('<li>').text($('#m').val()).css({
+									"text-align" : "right",
+									"padding-left" : "20%"
+								}));
+					} else {
+						socket.emit('broadcast', {
+							emitName : "chat message",
+							payload : $('#m').val()
+						});
+						$('#messages').append(
+								$('<li>').text($('#m').val()).css({
+									"text-align" : "right",
+									"padding-left" : "20%"
+								}));
+					}
+					$('#m').val('')
+					return false;
+				});
+		
 		socket.on('chat message', function(msg) {
 			$('#messages').append($('<li>').text(msg));
 		});
 		
+		socket.on('clientPrivateMessage', function(obj) {
+			hashmap[obj.sender].panel.find(".privateMessage").append(obj.message)
+		});
+
+		socket.on('newuser', function(userinfo) {
+			console.log(userinfo);
+			addUser(userinfo.name, userinfo.socketid);
+			$("#tabs").tabs("refresh");
+		});
+
 		/* JQUERY-UI */
-		
-		$("#tabs").tabs({
-			  active: 0
-		}).addClass("ui-tabs-vertical ui-helper-clearfix");
+
+		$("#tabs")
+				.tabs(
+						{
+							active : 0,
+							activate : function(event, ui) {
+								console.log(event)
+								console.log(ui)
+								console
+										.log(ui.newTab[0].firstElementChild.textContent)
+								currentSID = hashmap[ui.newTab[0].firstElementChild.textContent].id;
+								currentPanel = ui.newPanel;
+								console.log("sid changed to: " + currentSID)
+							}
+						}).addClass("ui-tabs-vertical ui-helper-clearfix");
 		$("#tabs li").removeClass("ui-corner-top").addClass("ui-corner-left");
 	});
 </script>
 </head>
 <body>
 	<div id="blurry">
-	<div id="tabs">
-		<span id="left">
-			<ul>
-				<!-- When using multiple lists extending the widget from widget factory is necessary -->
-				<li><a href="#tabs-1">Global</a></li>
-				<li><a href="#tabs-2">Chuck Norris</a></li>
-				<li><a href="#tabs-3">Dennis Ritchie</a></li>
-				<li><a href="#tabs-3">Ba'al</a></li>
-				<li><a href="#tabs-3">JinLau</a></li>
-				<li><a href="#tabs-3">Vinton C. Cerf</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-				<li><a href="#tabs-3">User2</a></li>
-			</ul>
-		</span> <span id="chatBody">
+		<div id="tabs">
+			<span id="left">
+				<ul id="contacts">
+					<!-- When using multiple lists extending the widget from widget factory is necessary -->
+					<li><a href="#tabs-1">Global</a></li>
+				</ul>
+			</span> <span id="chatBody">
 
-			<div id="tabs-1">
-				<ul id="messages"></ul>
-			</div>
-			<div id="tabs-2">
-				<h2>Content heading 2</h2>
-				<p>Morbi tincidunt, dui sit amet facilisis feugiat, odio metus
-					gravida ante, ut pharetra massa metus id nunc. Duis scelerisque
-					molestie turpis. Sed fringilla, massa eget luctus malesuada, metus
-					eros molestie lectus, ut tempus eros massa ut dolor. Aenean aliquet
-					fringilla sem. Suspendisse sed ligula in ligula suscipit aliquam.
-					Praesent in eros vestibulum mi adipiscing adipiscing. Morbi
-					facilisis. Curabitur ornare consequat nunc. Aenean vel metus. Ut
-					posuere viverra nulla. Aliquam erat volutpat. Pellentesque
-					convallis. Maecenas feugiat, tellus pellentesque pretium posuere,
-					felis lorem euismod felis, eu ornare leo nisi vel felis. Mauris
-					consectetur tortor et purus.</p>
-			</div>
-			<div id="tabs-3">
-				<h2>Content heading 3</h2>
-				<p>Mauris eleifend est et turpis. Duis id erat. Suspendisse
-					potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque
-					rutrum erat, eu congue orci lorem eget lorem. Vestibulum non ante.
-					Class aptent taciti sociosqu ad litora torquent per conubia nostra,
-					per inceptos himenaeos. Fusce sodales. Quisque eu urna vel enim
-					commodo pellentesque. Praesent eu risus hendrerit ligula tempus
-					pretium. Curabitur lorem enim, pretium nec, feugiat nec, luctus a,
-					lacus.</p>
-				<p>Duis cursus. Maecenas ligula eros, blandit nec, pharetra at,
-					semper at, magna. Nullam ac lacus. Nulla facilisi. Praesent viverra
-					justo vitae neque. Praesent blandit adipiscing velit. Suspendisse
-					potenti. Donec mattis, pede vel pharetra blandit, magna ligula
-					faucibus eros, id euismod lacus dolor eget odio. Nam scelerisque.
-					Donec non libero sed nulla mattis commodo. Ut sagittis. Donec nisi
-					lectus, feugiat porttitor, tempor ac, tempor vitae, pede. Aenean
-					vehicula velit eu tellus interdum rutrum. Maecenas commodo.
-					Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae
-					lectus hendrerit hendrerit.</p>
-			</div>
-		</span> 
+				<div id="tabs-1">
+					<ul id="messages"></ul>
+				</div>
+				<div id="tabs-4">
+					<ul class="privateMessage"></ul>
+				</div>
+			</span>
 		</div>
 		<span id="chatInput">
 			<form id="messageInput" action="">
@@ -307,7 +335,7 @@ padding:0;
 	</div>
 
 	<div id="overlay">I'm Overlay</div>
-		<table id="regOverlay">
+	<table id="regOverlay">
 		<tr>
 			<td style="text-align: center; vertical-align: middle;">
 				<div id="container">
