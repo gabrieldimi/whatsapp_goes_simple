@@ -209,9 +209,21 @@ form button {
 			$("#chatBody").append(newPanel)
 			hashmap[name] = {
 				"id":id,
-				"panel":newPanel
+				"panel":newPanel,
+				"listEntryID": nr
 			}
 			nr++;
+		}
+		
+		function removeUser(username) {
+			userinfo = hashmap[username];
+			if(userinfo !== undefined) {
+			$(userinfo.panel).remove();
+			$('#contacts li[aria-labelledby=ui-id-' + userinfo.listEntryID + ']').remove()
+			console.log('user' + username +'removed')
+			} else {
+				console.log("couldnt remove user. Not in hashmap")
+			}
 		}
 
 		var socket = io();
@@ -287,6 +299,11 @@ form button {
 			addUser(userinfo.name, userinfo.socketid);
 			$("#tabs").tabs("refresh");
 		});
+		
+		socket.on('userisgone', function(username) {
+			console.log('disconnected ' + username)
+			removeUser(username);
+		})
 
 		/* JQUERY-UI */
 
