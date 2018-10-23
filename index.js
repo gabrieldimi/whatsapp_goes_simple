@@ -2,7 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-function formatMessageData(data){
+function formatMessageData(data,userOnline){
 	var messageData = {};
 	messageData.userName = userOnline;
 	messageData.payload = data.payload;
@@ -64,13 +64,13 @@ io.on('connection', function(socket) {
 	});
 	
 	socket.on('broadcast', function(data){
-		var messageData = formatMessageData(data);
+		var messageData = formatMessageData(data,userOnline);
 		console.log("broadcast: " + userOnline + ": " + data.payload)
 	    socket.broadcast.emit(data.emitName, messageData);
 	});
 	
 	socket.on('privatemessage', function(data) {
-		var messageData = formatMessageData(data);
+		var messageData = formatMessageData(data,userOnline);
 		console.log("private message to " + data.id);
 		io.to(data.id).emit('clientPrivateMessage', data);
 	});
