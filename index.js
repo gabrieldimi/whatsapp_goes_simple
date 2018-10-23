@@ -56,6 +56,7 @@ io.on('connection', function(socket) {
 	});
 	socket.on('disconnect', function() {
 		if (hasRegistrated) {
+			socket.broadcast.emit("userisgone",userOnline);
 			delete users[userOnline];
 			console.log(userOnline + 'has been deleted');
 		}
