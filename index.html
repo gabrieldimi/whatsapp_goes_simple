@@ -299,7 +299,11 @@ form button {
 								console.log(ui)
 								console
 										.log(ui.newTab[0].firstElementChild.textContent)
+								if(ui.newTab[0].firstElementChild.textContent == "Global") {
+									currentSID = undefined; //Improve
+								} else {
 								currentSID = hashmap[ui.newTab[0].firstElementChild.textContent].id;
+								}
 								currentPanel = ui.newPanel;
 								console.log("sid changed to: " + currentSID)
 							}
