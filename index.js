@@ -8,7 +8,7 @@ function formatMessageData(data,userOnline){
 	messageData.payload = data.payload;
 	var dateObj = new Date();
 	var time = dateObj.getHours() + ":" + dateObj.getMinutes();
-	var date = dateObj.getYear() + "-" + dateObj.getMonth() + "-" + dateObj.getDay();
+	var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
 	messageData.time = time;
 	messageData.date = date;
 	return messageData;
@@ -16,7 +16,7 @@ function formatMessageData(data,userOnline){
 var users = {}
 
 app.get('/', function(req, res) {
-	res.sendFile(__dirname + '/index.html');
+	res.sendFile(__dirname + '/index.html');Dat
 });
 
 
@@ -72,7 +72,7 @@ io.on('connection', function(socket) {
 	socket.on('privatemessage', function(data) {
 		var messageData = formatMessageData(data,userOnline);
 		console.log("private message to " + data.id);
-		io.to(data.id).emit('clientPrivateMessage', data);
+		io.to(data.id).emit('clientPrivateMessage', messageData);
 	});
 });
 
