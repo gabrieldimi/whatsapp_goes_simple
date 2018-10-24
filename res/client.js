@@ -1,6 +1,7 @@
 	$(function() {
 		
 		var dropArea = $('#chatBody')[0];
+		var messageID = 0;
 		
 		function preventDefaults(e) {
 			e.preventDefault();
@@ -9,6 +10,14 @@
 		
 		function unhighlight() {
 			$('#dropOverlay').css({'opacity': '0'})
+		}
+		
+		function highlight() {
+			$('#dropOverlay').css({'opacity': '0.5'});
+		}
+		
+		function getMessageID() {
+			return messageID++;
 		}
 		
 		
@@ -20,11 +29,9 @@
 			dropArea.addEventListener(eventName, unhighlight, false);
 		});
 		
-		
-		dropArea.addEventListener('dragenter', function() {
-			console.log('dragenter');
-			$('#dropOverlay').css({'opacity': '0.5'});
-		}); //change to actual droparea
+		;['dragenter', 'dragover'].forEach(eventName => {
+			dropArea.addEventListener(eventName, highlight, false);
+		});
 		
 		dropArea.addEventListener('drop', function(e) {
 			console.log(e.dataTransfer.files);
@@ -64,7 +71,7 @@
 					$('<pre>').text(
 							messageObj.userName + ': ' + messageObj.payload
 									+ '\n' + messageObj.time + '\n'
-									+ messageObj.date));
+									+ messageObj.date)).css({"clear": "left"});
 		}
 
 		function markedMessage(src, msgBody) {
@@ -84,6 +91,12 @@
 		function markedMessageLeft(username) {
 			markedMessage('leave.png', username
 					+ ": has left the room")
+		}
+		
+		function callback(timestamp, messageID) {
+			console.log('server callback timestamp: ');
+			console.log(timestamp);
+		//	$('#chatBody').find("chat-" + messageID).append(timestamp) not implemented on server yet
 		}
 
 		var socket = io();
@@ -120,28 +133,28 @@
 
 		$('#messageInput').submit(
 				function() {
+					var currentMessageID = getMessageID();
 					if (currentSID !== undefined) { //if not Global selected
 						socket.emit('privatemessage', {
 							'id' : currentSID,
 							'payload' : $('#m').val(),
 							'sender' : selfName
-						})
+						}, callback, currentMessageID)
 						currentPanel.find(".privateMessage").append(
 								$('<li>').text($('#m').val()).css({
 									"text-align" : "right",
 									"padding-left" : "20%"
-								}));
+								}).attr('id', "sent-" + currentMessageID));
 					} else {
 						socket.emit('broadcast', {
 							emitName : "chat message",
 							payload : $('#m').val()
-						});
+						}, callback, currentMessageID);
 						$('#messages').append(
 								$('<li>').text($('#m').val()).css({
 									"text-align" : "right",
-									"padding-left" : "20%",
-									"clear": "left"
-								}));
+									"padding-left" : "20%"
+								}).attr('id', "sent-" + currentMessageID));
 					}
 					$('#m').val('')
 					return false;

@@ -34,7 +34,7 @@ io.on('connection', function(socket) {
 		var answer = {};
 		console.log(name + " tried to register")
 		console.log(users)
-		if (!users[name]) { //Name Global needs to be forbidden, too
+		if (!users[name]) { // Name Global needs to be forbidden, too
 			console.log(name + ' is registered');
 			var pair = {};
 			users[name] = pair;
@@ -69,9 +69,14 @@ io.on('connection', function(socket) {
 		console.log('user disconnected');
 	});
 	
-	socket.on('broadcast', function(data){
+	
+	socket.on('broadcast', function(data, callback){
+		var dateObj = new Date();
+		var time = dateObj.getHours() + ":" + dateObj.getMinutes();
+		var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
 		var messageData = formatMessageData(data,userOnline);
 		console.log("broadcast: " + userOnline + ": " + data.payload)
+		callback({"time": time, "date": date})
 	    socket.broadcast.emit(data.emitName, messageData);
 	});
 	
