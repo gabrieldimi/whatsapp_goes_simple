@@ -4,6 +4,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var path = require('path');
 var ss = require('socket.io-stream');
+var fs = require('fs');
 
 app.use(express.static('icons'));
 app.use(express.static('res'));
