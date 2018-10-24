@@ -18,6 +18,14 @@ function formatMessageData(data,userOnline){
 	messageData.date = date;
 	return messageData;
 }
+
+function sendMessageWithTimestamp (data,userOnline,callback,messageID){
+  var dateObj = new Date();
+  var time = dateObj.getHours() + ":" + dateObj.getMinutes();
+  var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
+  var messageData = formatMessageData(data,userOnline);
+  callback({"time": time, "date": date},messageID);
+}
 var users = {}
 
 app.get('/', function(req, res) {
@@ -70,24 +78,18 @@ io.on('connection', function(socket) {
 	});
 	
 	
-	socket.on('broadcast', function(data, callback){
-		var dateObj = new Date();
-		var time = dateObj.getHours() + ":" + dateObj.getMinutes();
-		var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
-		var messageData = formatMessageData(data,userOnline);
-		console.log("broadcast: " + userOnline + ": " + data.payload)
-		callback({"time": time, "date": date})
+	socket.on('broadcast', function(data, callback,messageID){
+		console.log("broadcast: " + userOnline + ": " + data.payload);
+		sendMessageWithTimestamp (data,userOnline,callback,messageID);
 	    socket.broadcast.emit(data.emitName, messageData);
 	});
 	
-	socket.on('privatemessage', function(data) {
-		var messageData = formatMessageData(data,userOnline);
+	socket.on('privatemessage', function(data,userOnline,callback,messageID) {
+		sendMessageWithTimestamp (data,userOnline,callback,messageID)
 		console.log("private message to " + data.id);
 		io.to(data.id).emit('clientPrivateMessage', messageData);
 	});
 });
-
-
 
 // io.emit('some event', { for: 'everyone' });
 
