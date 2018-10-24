@@ -225,6 +225,10 @@ form button {
 				console.log("couldnt remove user. Not in hashmap")
 			}
 		}
+		
+		function formatMessage(messageObj) {
+			return $('<li>').text(messageObj.userName + ': ' + messageObj.payload + '\n' + messageObj.time + '\n' + messageObj.date);
+		}
 
 		var socket = io();
 		var hashmap = {};
@@ -287,11 +291,12 @@ form button {
 				});
 		
 		socket.on('chat message', function(messageObj) {
-			$('#messages').append($('<li>').text(messageObj.userName + ': ' + messageObj.payload + '\n' + messageObj.time + '\n' + messageObj.date));
+			$('#messages').append(formatMessage(messageObj));
 		});
 		
-		socket.on('clientPrivateMessage', function(obj) {
-			hashmap[obj.sender].panel.find(".privateMessage").append(obj.message)
+		socket.on('clientPrivateMessage', function(messageObj) {
+			//sender on server sent
+			hashmap[messageObj].panel.find(".privateMessage").append(formatMessage(messageObj));
 		});
 
 		socket.on('newuser', function(userinfo) {
