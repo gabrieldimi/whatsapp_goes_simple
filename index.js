@@ -3,6 +3,7 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var path = require('path');
+var ss = require('socket.io-stream');
 
 app.use(express.static('icons'));
 app.use(express.static('res'));
@@ -81,8 +82,16 @@ io.on('connection', function(socket) {
 	socket.on('broadcast', function(data, callback,messageID){
 		console.log("broadcast: " + userOnline + ": " + data.payload);
 		sendMessageWithTimestamp (data,userOnline,callback,messageID);
+		
+		
 	    socket.broadcast.emit(data.emitName, messageData);
 	});
+
+	ss(socket).on('sendingbinary', function(stream, data) {
+		var filename = path.basename(data.name);
+		fs.createReadStream(filename).pipe(stream);
+	});
+
 	
 	socket.on('privatemessage', function(data,userOnline,callback,messageID) {
 		sendMessageWithTimestamp (data,userOnline,callback,messageID)
