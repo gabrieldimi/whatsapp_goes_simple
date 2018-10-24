@@ -20,24 +20,35 @@
 			return messageID++;
 		}
 		
-		
+		//Prevent Default Handling for these events, i.e. opening the dropped file in a new tab
 		;['dragenter', 'dragleave', 'dragover', 'drop'].forEach(eventName => {
 			dropArea.addEventListener(eventName, preventDefaults, false);
+		});
+		
+		
+		//give visual feedback on dragging
+		;['dragenter', 'dragover'].forEach(eventName => {
+			dropArea.addEventListener(eventName, highlight, false);
 		});
 		
 		;['dragleave', 'drop'].forEach(eventName => {
 			dropArea.addEventListener(eventName, unhighlight, false);
 		});
 		
-		;['dragenter', 'dragover'].forEach(eventName => {
-			dropArea.addEventListener(eventName, highlight, false);
-		});
 		
 		dropArea.addEventListener('drop', function(e) {
 			console.log(e.dataTransfer.files);
+			
+		    var file = e.dataTransfer.files[0];
+		    var stream = ss.createStream();
+		    
+		    
+			ss(socket).emit('sendingbinary', stream, {'name': 'test.bin'});
+			ss.createBlobReadStream(file).pipe(stream)
 		});
 		
 		var nr = 2;
+		//adds a new tab and Panel for every user
 		function addUser(name, id) {
 			$("#contacts").append(
 					$('<li>').append(
@@ -53,6 +64,7 @@
 			nr++;
 		}
 
+		//removes tab and Panel of diconnected user
 		function removeUser(username) {
 			userinfo = hashmap[username];
 			if (userinfo !== undefined) {
@@ -66,6 +78,7 @@
 			}
 		}
 
+		//properly formats messages to include name, payload and timestamp
 		function formatMessage(messageObj) {
 			return $('<li>').append(
 					$('<pre>').text(
@@ -74,6 +87,7 @@
 									+ messageObj.date)).css({"clear": "left"});
 		}
 
+		//adds a marked message to the room
 		function markedMessage(src, msgBody) {
 			var img = $('<img>').attr('src', src).addClass('icon');
 			var li = $('<li>').addClass('listEntry');
@@ -83,16 +97,19 @@
 			$('#messages').append(li)
 		}
 
+		//invoked when new user enters room
 		function markedMessageEntered(username) {
 			markedMessage('enter.png', username
 					+ ": has entered the room")
 		}
 
+		//invoked when a user left room
 		function markedMessageLeft(username) {
 			markedMessage('leave.png', username
 					+ ": has left the room")
 		}
 		
+		//getting timestamp for posted message from server
 		function callback(timestamp, messageID) {
 			console.log('server callback timestamp: ');
 			console.log(timestamp);
@@ -208,4 +225,5 @@
 							}
 						}).addClass("ui-tabs-vertical ui-helper-clearfix");
 		$("#tabs li").removeClass("ui-corner-top").addClass("ui-corner-left");
+		/* JQUERY-UI END*/
 	});
