@@ -54,26 +54,32 @@ io.on('connection', function(socket) {
 		var answer = {};
 		console.log(name + " tried to register")
 		console.log(users)
-		if (!users[name]) { // Name Global needs to be forbidden, too
-			console.log(name + ' is registered');
-			var pair = {};
-			users[name] = pair;
-			pair.connection = socket.id;
-			userOnline = name;
-			answer.users = users;
-			hasRegistrated = true;
-			answer.success = true;
-			answer.selfName = name;
-			var newUser = {};
-			newUser.socketid = socket.id;
-			newUser.name = name;
-			socket.broadcast.emit('newuser',newUser);
-		} else {
-			console.log('user name: ' + name + ' already exists');
-			answer.success = false;
-			answer.msg = name + " already exists";
-		}
+		if(name.length > 0){
 
+			if (!users[name]) { // Name Global needs to be forbidden, too
+				console.log(name + ' is registered');
+				var pair = {};
+				users[name] = pair;
+				pair.connection = socket.id;
+				userOnline = name;
+				answer.users = users;
+				hasRegistrated = true;
+				answer.success = true;
+				answer.selfName = name;
+				var newUser = {};
+				newUser.socketid = socket.id;
+				newUser.name = name;
+				socket.broadcast.emit('newuser',newUser);
+			} else {
+				console.log('user name: ' + name + ' already exists');
+				answer.success = false;
+				answer.msg = name + " already exists";
+			}
+	    }else{
+			console.log('user name: '+ name + ' is too short');
+			answer.success = false;
+			answer.msg = name +" is too short";
+		}
 		socket.emit('registrationStatus', answer);
 	});
 	socket.on('chat message', function(msg) {
