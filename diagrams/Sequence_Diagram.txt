@@ -1,0 +1,28 @@
+title Simple Chat Server
+
+Alice->Server: GET Document
+Server->Alice: Serve Document
+Alice->Server: Connect with Socket.io
+Alice<-Server: Answer contains (empty) user list
+Bob->Server: GET Document
+Server->Bob: Serve Document
+Bob->Server:Connect with Socket.io
+Server->(3)Alice:Broadcast: new User entered
+Bob<-Server:Answer contains user List
+Bob->(3)Server: private Message to Alice
+Server->(3)Alice: relay/forward message to Alice
+
+Charlie-->(3)Server: GET Document
+Server-->(3)Charlie: Serve Document
+Charlie-->(3)Server: Connect with Socket.io
+Server->Alice:Broadcast: Charlie has entered
+Server->Bob: Broadcast: Charlie has entered
+Charlie(3)<--Server:Answer contains user List
+Charlie-->(3)Server: Broadcast message: Hi, I'm new in town.
+Server->Alice: relay/forward message to alice
+Server->Bob: relay/forward message to bob
+Alice->(3)Server:disconnects
+Server->(3)Bob: broadcast: alice is gone
+Server-->(3)Charlie: Broadcast: alice is gone
+
+
