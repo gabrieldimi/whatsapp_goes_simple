@@ -50,6 +50,27 @@ form button {
 	padding: 10px;
 }
 
+#overlay {
+	display: none;
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	top: 0;
+	width: 100%;
+}
+
+#blurry {
+	height: 100%;
+	filter: blur(1px);
+}
+
+#messageInput {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+/* MESSAGE FORMAT */
+
 #messages {
 	list-style-type: none;
 	margin: 0;
@@ -78,25 +99,6 @@ form button {
 	background: #eee;
 }
 
-#overlay {
-	display: none;
-	width: 100%;
-	height: 100%;
-	position: fixed;
-	top: 0;
-	width: 100%;
-}
-
-#blurry {
-	height: 100%;
-	filter: blur(1px);
-}
-
-#messageInput {
-	display: table-cell;
-	vertical-align: middle;
-}
-
 .markedMessage {
 	text-align: center;
 	background: #61aa61 !important;
@@ -123,6 +125,16 @@ float:left;
 	color:#d00;
 }
 
+.recipientMessage {
+	clear:left;
+}
+
+.senderMessage {
+	clear: left;
+	text-align : right;
+	padding-left : 20% !important;
+}
+/* DROPZONE*/
 #fileElem {
 	display:none;
 }
@@ -187,8 +199,6 @@ float:left;
 	font-size: 48pt;
 }
 
-/* REGISTRATION OVERLAY END*/
-
 /*JQUERY-UI tabs*/
 #tabs {
 	height: 90%;
@@ -231,11 +241,9 @@ float:left;
 .ui-tabs-vertical .ui-tabs-panel {
 	padding: 1em;
 	float: right;
-	/* width: 40em; */
 	width: 100%;
 }
 
 .ui-tabs-anchor {
 	width: 100%;
 }
-/*JQUERY-UI tabs*/

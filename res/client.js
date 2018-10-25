@@ -116,12 +116,12 @@ $(function() {
 		}
 
 		// properly formats messages to include name, payload and timestamp
-		function formatMessage(messageObj) {
+		function formatMessage(messageObj, cssClazz) {
 			return $('<li>').append(
 					$('<pre>').text(
-							messageObj.userName + ':\n' + messageObj.payload
-									+ '\n' + messageObj.time + '\n'
-									+ messageObj.date)).css({"clear": "left"});
+							messageObj.userName + ':\n\n' + messageObj.payload
+									+ '\n\n' + messageObj.time + '\n'
+									+ messageObj.date)).addClass(cssClazz);
 		}
 
 		// adds a marked message to the room
@@ -208,42 +208,40 @@ $(function() {
 				function() {
 					console.log(callback)
 					var currentMessageID = getMessageID();
+					var messageObj = {}
+					messageObj.payload = $('#m').val()
+					messageObj.userName = selfName;
+					var timestamp = getTimeStamp()
+					messageObj.date = timestamp.date;
+					messageObj.time = timestamp.time;
 					if (currentSID !== undefined) { // if not Global selected
 						socket.emit('privatemessage', {
 							'id' : currentSID,
 							'payload' : $('#m').val(),
 							'sender' : selfName
 						}, callback, currentMessageID)
-						currentPanel.find(".privateMessage").append(
-								$('<li>').text($('#m').val()).css({
-									"text-align" : "right",
-									"padding-left" : "20%"
-								}).attr('id', "sent-" + currentMessageID));
+						currentPanel.find(".privateMessage").append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
 					} else {
 						socket.emit('broadcast', {
 							emitName : "chat message",
 							payload : $('#m').val(),
 							"callback": callback
 						}, callback, currentMessageID);
-						$('#messages').append(
-								$('<li>').text($('#m').val()).css({
-									"text-align" : "right",
-									"padding-left" : "20%"
-								}).attr('id', "sent-" + currentMessageID));
+						$('#messages').append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
 					}
 					$('#m').val('')
 					return false;
 				});
 
 		socket.on('chat message', function(messageObj) {
-			$('#messages').append(formatMessage(messageObj));
+			$('#messages').append(formatMessage(messageObj, 'recipientMessage'));
 		});
 
 		socket.on('clientPrivateMessage', function(messageObj) {
 			// sender on server sent
 			console.log('reply from user: ' + messageObj.userName)
 			hashmap[messageObj.userName].panel.find(".privateMessage").append(
-					formatMessage(messageObj));
+					formatMessage(messageObj, 'recipientMessage'));
 		});
 		
 		socket.on('clientPrivateUpload', function(messageObj) {
