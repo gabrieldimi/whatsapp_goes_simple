@@ -101,7 +101,7 @@ $(function() {
 		function formatMessage(messageObj) {
 			return $('<li>').append(
 					$('<pre>').text(
-							messageObj.userName + ': ' + messageObj.payload
+							messageObj.userName + ':\n' + messageObj.payload
 									+ '\n' + messageObj.time + '\n'
 									+ messageObj.date)).css({"clear": "left"});
 		}
