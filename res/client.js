@@ -129,7 +129,7 @@ $(function() {
 		}
 		
 		function fileUploaded(filename) {
-			return markedMessage('', $('<a>').text(filename + ' has been uploaded to the server').attr('href', '/'+filename))
+			return markedMessage('', $('<a>').text(filename + ' has been uploaded to the server').attr('href', '/'+filename).attr("target", "_blank"))
 		}
 		
 		// getting timestamp for posted message from server
