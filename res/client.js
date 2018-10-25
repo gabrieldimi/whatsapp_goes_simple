@@ -179,6 +179,10 @@ $(function() {
 				}
 				$('#regOverlay').css("display", "none");
 				$('#blurry').css("filter", "none");
+			}else{
+				$('#regOverlay #errorMessage').text("User name has already been taken.");
+				$('$regInput').addClass('errorBoxOutline');
+				console.log("user name is already taken.");
 			}
 		});
 
