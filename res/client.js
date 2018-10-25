@@ -1,4 +1,22 @@
 $(function() {
+
+		function addLeadingZeroToMinutes(dateObject){
+		mins = dateObject.getMinutes();
+		if(mins < 10){
+			mins = '0'+ mins;
+		}
+		return mins;
+		}
+		
+		function getTimeStamp()	{
+			var timestamp ={};
+			var dateObj = new Date();
+			var time = dateObj.getHours() + ":" + addLeadingZeroToMinutes(dateObj);
+			var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
+			timestamp.time =time;
+			timestamp.date = date;
+		    return timestamp;
+		}
 		
 		var dropArea = $('#chatBody')[0];
 		var messageID = 0;
