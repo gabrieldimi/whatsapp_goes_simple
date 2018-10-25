@@ -8,6 +8,7 @@ var fs = require('fs');
 
 app.use(express.static('icons'));
 app.use(express.static('res'));
+app.use(express.static('media'))
 
 function formatMessageData(data,userOnline){
 	var messageData = {};
@@ -26,7 +27,8 @@ function sendMessageWithTimestamp (data,userOnline,callback,messageID){
   var time = dateObj.getHours() + ":" + dateObj.getMinutes();
   var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
   var messageData = formatMessageData(data,userOnline);
-  callback({"time": time, "date": date},messageID);
+  //callback({"time": time, "date": date},messageID)
+  return messageData;
 }
 var users = {}
 
@@ -81,24 +83,36 @@ io.on('connection', function(socket) {
 	
 	
 	socket.on('broadcast', function(data, callback,messageID){
+		console.log(callback);
+		console.log(messageID)
 		console.log("broadcast: " + userOnline + ": " + data.payload);
-		sendMessageWithTimestamp (data,userOnline,callback,messageID);
-		
-		
+		var messageData = sendMessageWithTimestamp (data,userOnline,callback,messageID);
 	    socket.broadcast.emit(data.emitName, messageData);
 	});
 
 	ss(socket).on('sendingbinary', function(stream, data) {
-		var filename = path.basename(data.name);
-		fs.createReadStream(filename).pipe(stream);
+		console.log(data);
+		stream.pipe(fs.createWriteStream(__dirname + "/media/" + data.name));
 	});
 
 	
-	socket.on('privatemessage', function(data,userOnline,callback,messageID) {
-		sendMessageWithTimestamp (data,userOnline,callback,messageID)
+	socket.on('privatemessage', function(data,callback,messageID) {
+		console.log('callback: ' + callback)
+		messageData = sendMessageWithTimestamp (data,userOnline,callback,messageID)
 		console.log("private message to " + data.id);
 		io.to(data.id).emit('clientPrivateMessage', messageData);
 	});
+	
+	socket.on('privateUpload', function(data, filename) {
+		console.log('server uploadnotice')
+		io.to(data.id).emit('clientPrivateUpload', {"userName": userOnline, 'filename': filename})
+	})
+	
+	socket.on('upload', function(filename) {
+		console.log('server uploadnotice')
+		socket.broadcast.emit('clientUpload', {"userName": userOnline, 'filename': filename})
+	})
+	
 });
 
 // io.emit('some event', { for: 'everyone' });
