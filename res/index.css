@@ -116,6 +116,13 @@ float:left;
 	float:left;
 }
 
+#errorMessage {
+	position:absolute;
+	width:100%;
+	font-size: 24pt;
+	color:#d00;
+}
+
 #fileElem {
 	display:none;
 }
