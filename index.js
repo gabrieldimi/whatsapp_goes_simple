@@ -10,12 +10,20 @@ app.use(express.static('icons'));
 app.use(express.static('res'));
 app.use(express.static('media'))
 
+function addLeadingZeroToMinutes(dateObject){
+	mins = dateObject.getMinutes();
+    if(mins < 10){
+		mins = '0'+ mins;
+	}
+	return mins;
+}
 function formatMessageData(data,userOnline){
 	var messageData = {};
 	messageData.userName = userOnline;
 	messageData.payload = data.payload;
 	var dateObj = new Date();
-	var time = dateObj.getHours() + ":" + dateObj.getMinutes();
+	var time = dateObj.getHours() + ":" + addLeadingZeroToMinutes(dateObj);
+	console.log("time: " + time );
 	var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
 	messageData.time = time;
 	messageData.date = date;
