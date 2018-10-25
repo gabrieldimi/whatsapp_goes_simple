@@ -14,5 +14,10 @@
   "scripts": {
     "watch": "nodemon server.js",
     "start": "npm run watch"
-  }
+  },
+  "contributors": [
+	{"name": "Gabriel Dimitrov",
+	      "email": "Gabriel.Dimitrov@Student.reutlingen-university.de"},
+	{"name": "Julian Leuze",
+      "email": "Julian.Leuze@Student.reutlingen-university.de"}]
 }

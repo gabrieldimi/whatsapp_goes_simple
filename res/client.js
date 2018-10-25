@@ -1,3 +1,6 @@
+/* 
+Contributors: Gabriel Dimitrov, Julian Leuze
+*/
 $(function() {
 
 		function addLeadingZeroToMinutes(dateObject){
@@ -170,14 +173,13 @@ $(function() {
 		});
 
 		socket.on('registrationStatus', function(obj) {
-			console.log(obj);
 			if (obj.success) {
 				selfName = obj.selfName;
 				if (obj.users) {
 					console.log("all known users: ")
 					console.log(obj.users);
 					for ( var key in obj.users) {
-						if (key != selfName) {
+						if (key != selfName && !hashmap[key]) {
 							console.log("adding:")
 							console.log(key)
 							addUser(key, obj.users[key].connection); // connection
