@@ -138,6 +138,15 @@ float:left;
 	text-align : right;
 	padding-left : 20% !important;
 }
+
+/* ToneAnalyzer Moods */
+.good {
+	background: #0f0 !important;
+}
+
+.bad {
+	background: #00f !important;
+}
 /* DROPZONE*/
 #fileElem {
 	display:none;

@@ -9,6 +9,7 @@ var io = require('socket.io')(http);
 var path = require('path');
 var ss = require('socket.io-stream');
 var fs = require('fs');
+var request = require('request')
 
 app.use(express.static('icons'));
 app.use(express.static('res'));
@@ -44,6 +45,32 @@ function sendMessageWithTimestamp (data,userOnline,callback,messageID){
   //callback({"time": time, "date": date},messageID)
   return messageData;
 }
+
+function analyzeMood(data) {
+	return new Promise(function (resolve, reject) {
+	console.log('analyzing mood...')
+	request({
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		uri: 'https://zealous-bhabha.eu-de.mybluemix.net/tone',
+		body: `{ "texts": ["${data.payload}"]}`,
+		method: 'POST'
+	},
+    function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+			console.log("MOOD: " + body);
+            resolve(body);
+        } else {
+        reject(error);
+      }
+    }
+);
+	});
+console.log('analyzed mood...')
+}
+
+//key-value user database
 var users = {}
 
 app.get('/', function(req, res) {
@@ -116,10 +143,13 @@ io.on('connection', function(socket) {
 	});
 
 	
-	socket.on('privatemessage', function(data,callback,messageID) {
+	socket.on('privatemessage', async function(data,callback,messageID) {
 		console.log('callback: ' + callback)
 		messageData = sendMessageWithTimestamp (data,userOnline,callback,messageID)
 		console.log("private message to " + data.id);
+		var toneAnalyzer =  await analyzeMood(data);
+		console.log("TYPE" + (typeof toneAnalyzer));
+		messageData.mood = JSON.parse(toneAnalyzer).mood;
 		io.to(data.id).emit('clientPrivateMessage', messageData);
 	});
 	

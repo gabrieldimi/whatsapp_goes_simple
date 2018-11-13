@@ -120,11 +120,15 @@ $(function() {
 
 		// properly formats messages to include name, payload and timestamp
 		function formatMessage(messageObj, cssClazz) {
-			return $('<li>').append(
+			messageEntry = $('<li>').append(
 					$('<pre>').text(
 							messageObj.userName + ':\n\n' + messageObj.payload
 									+ '\n\n' + messageObj.time + '\n'
 									+ messageObj.date)).addClass(cssClazz);
+			if(messageObj.mood) {
+				messageEntry.addClass((messageObj.mood === 'happy' ? 'good':'bad'))
+			}
+			return messageEntry;
 		}
 
 		// adds a marked message to the room
@@ -244,6 +248,7 @@ $(function() {
 			console.log('reply from user: ' + messageObj.userName)
 			hashmap[messageObj.userName].panel.find(".privateMessage").append(
 					formatMessage(messageObj, 'recipientMessage'));
+					console.log(messageObj.userName + " is " + messageObj.mood)
 		});
 		
 		socket.on('clientPrivateUpload', function(messageObj) {
@@ -269,6 +274,8 @@ $(function() {
 			removeUser(username);
 			markedMessageLeft(username);
 		})
+		
+		//socket.on('')
 
 		/* JQUERY-UI */
 
