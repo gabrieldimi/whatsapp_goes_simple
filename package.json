@@ -13,7 +13,7 @@
   },
   "scripts": {
     "watch": "nodemon server.js",
-    "start": "npm run watch"
+    "start": "node index.js"
   },
   "contributors": [
 	{"name": "Gabriel Dimitrov",

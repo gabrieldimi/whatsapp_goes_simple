@@ -14,6 +14,8 @@ app.use(express.static('icons'));
 app.use(express.static('res'));
 app.use(express.static('media'))
 
+let port = process.env.PORT || 3000;
+
 function addLeadingZeroToMinutes(dateObject){
 	mins = dateObject.getMinutes();
     if(mins < 10){
@@ -135,6 +137,6 @@ io.on('connection', function(socket) {
 
 // io.emit('some event', { for: 'everyone' });
 
-http.listen(3000, function() {
-	console.log('listening on *:3000');
+http.listen(port, function() {
+	console.log('listening on *:' + port);
 });
