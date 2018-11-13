@@ -1,5 +1,5 @@
 ---
 applications:
-- name: wonderful-chandrasekhar
+- name: practical-jones
   memory: 512M
   instances: 1
