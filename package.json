@@ -25,5 +25,8 @@
       "name": "Julian Leuze",
       "email": "Julian.Leuze@Student.reutlingen-university.de"
     }
-  ]
+  ],
+  "engines": {
+	"node": ">= 7.6"
+ }
 }
