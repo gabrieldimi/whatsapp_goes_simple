@@ -1,5 +1,5 @@
 ---
 applications:
-- name: practical-jones
+- name: hsrtcloudchat
   memory: 512M
   instances: 1
