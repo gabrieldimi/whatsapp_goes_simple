@@ -141,11 +141,11 @@ float:left;
 
 /* ToneAnalyzer Moods */
 .good {
-	background: #0f0 !important;
+	background: #00FF00 !important;
 }
 
 .bad {
-	background: #00f !important;
+	background: #0000FF !important;
 }
 /* DROPZONE*/
 #fileElem {
