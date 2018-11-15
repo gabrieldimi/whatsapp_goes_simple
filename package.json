@@ -3,21 +3,30 @@
   "version": "0.0.1",
   "description": "my first socket.io app",
   "dependencies": {
-    "express": "^4.15.2",
+    "express": "^4.16.4",
     "express-static": "*",
+    "request": "^2.88.0",
     "socket.io": "^2.1.1",
     "socket.io-stream": "^0.9.1"
   },
   "devDependencies": {
-    "nodemon": "^1.18.4"
+    "nodemon": "^1.18.6"
   },
   "scripts": {
     "watch": "nodemon server.js",
     "start": "node index.js"
   },
   "contributors": [
-	{"name": "Gabriel Dimitrov",
-	      "email": "Gabriel.Dimitrov@Student.reutlingen-university.de"},
-	{"name": "Julian Leuze",
-      "email": "Julian.Leuze@Student.reutlingen-university.de"}]
+    {
+      "name": "Gabriel Dimitrov",
+      "email": "Gabriel.Dimitrov@Student.reutlingen-university.de"
+    },
+    {
+      "name": "Julian Leuze",
+      "email": "Julian.Leuze@Student.reutlingen-university.de"
+    }
+  ],
+  "engines": {
+    "node": ">= 7.6"
+  }
 }

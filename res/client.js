@@ -21,6 +21,61 @@ $(function() {
 		    return timestamp;
 		}
 		
+		var chatBody = $('#chatBody');
+		/*
+		 * To be invoked after a new message has been received, to scroll to the
+		 * latest message
+		 */
+		function scrollToBottom() {
+			chatBody[0].scrollTop = chatBody[0].scrollHeight;
+		}
+		
+		function handleMediaFile(stream, data) {
+			
+			fileBuffer = [],
+		    fileLength = 0;
+			console.log('HANDLE MEDIA FILES TRIGGERED')
+			stream.on('data', function (chunk) {
+				console.log('receiving CHUNK!')
+				fileLength += chunk.length;
+				console.log('fileLength: ' + fileLength)
+                // var progress = Math.floor((fileLength / fileInfo.size) *
+				// 100);
+                // progress = Math.max(progress - 2, 1);
+                fileBuffer.push(chunk);
+            });
+			
+			 stream.on('end', function () {
+
+	                var filedata = new Uint8Array(fileLength),
+	                i = 0;
+
+	                // == Loop to fill the final array
+	                fileBuffer.forEach(function (buff) {
+	                    for (var j = 0; j < buff.length; j++,i++) {
+	                        filedata[i] = buff[j];
+	                    }
+	                });
+	                
+	                blob = new Blob([filedata], {
+	                    type : "image/png"
+	                }),
+	                url = window.URL.createObjectURL(blob);
+	                console.log("URL:");
+	                console.log(url);
+	                /*
+					 * TODO: needs own function TODO:and implemented for
+					 * private, too TODO: Handle all media files not just
+					 * images, adjust dropzone
+					 */
+	                var img = document.createElement('img');
+	                img.src = url;
+	                $(img).css({'display': 'block'})
+	                $('#messages').append(img);
+	                scrollToBottom();
+			 });
+		}
+		
 		var dropArea = $('#chatBody')[0];
 		var messageID = 0;
 		
@@ -83,8 +138,10 @@ $(function() {
 		dropArea.addEventListener('drop', function(e) {
 			console.log(e.dataTransfer.files);
 			
-			var file = e.dataTransfer.files[0];
-			handleFiles(file)
+			for(var i = 0; i < e.dataTransfer.files.length; i++) {
+				var file = e.dataTransfer.files[i];
+				handleFiles(file) // TODO: move loop to receiver
+			}
 		});
 		
 		var nr = 2;
@@ -120,11 +177,15 @@ $(function() {
 
 		// properly formats messages to include name, payload and timestamp
 		function formatMessage(messageObj, cssClazz) {
-			return $('<li>').append(
+			messageEntry = $('<li>').append(
 					$('<pre>').text(
 							messageObj.userName + ':\n\n' + messageObj.payload
 									+ '\n\n' + messageObj.time + '\n'
 									+ messageObj.date)).addClass(cssClazz);
+			if(messageObj.mood) {
+				messageEntry.addClass((messageObj.mood === 'happy' ? 'good':'bad'))
+			}
+			return messageEntry;
 		}
 
 		// adds a marked message to the room
@@ -232,11 +293,13 @@ $(function() {
 						$('#messages').append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
 					}
 					$('#m').val('')
+					scrollToBottom();
 					return false;
 				});
 
 		socket.on('chat message', function(messageObj) {
 			$('#messages').append(formatMessage(messageObj, 'recipientMessage'));
+			scrollToBottom();
 		});
 
 		socket.on('clientPrivateMessage', function(messageObj) {
@@ -244,6 +307,8 @@ $(function() {
 			console.log('reply from user: ' + messageObj.userName)
 			hashmap[messageObj.userName].panel.find(".privateMessage").append(
 					formatMessage(messageObj, 'recipientMessage'));
+					console.log(messageObj.userName + " is " + messageObj.mood)
+					scrollToBottom();
 		});
 		
 		socket.on('clientPrivateUpload', function(messageObj) {
@@ -269,6 +334,8 @@ $(function() {
 			removeUser(username);
 			markedMessageLeft(username);
 		})
+		
+		ss(socket).on('serverPushMediaFile', (stream, data) => handleMediaFile(stream,data))
 
 		/* JQUERY-UI */
 
@@ -280,11 +347,9 @@ $(function() {
 								effect : "fadeIn",
 								duration : 400,
 							},
+							// will be called when switching to another tab
 							activate : function(event, ui) {
-								console.log(event)
-								console.log(ui)
-								console
-										.log(ui.newTab[0].firstElementChild.textContent)
+								console.log(ui.newTab[0].firstElementChild.textContent)
 								if (ui.newTab[0].firstElementChild.textContent == "Global") {
 									currentSID = undefined; // Improve
 								} else {
