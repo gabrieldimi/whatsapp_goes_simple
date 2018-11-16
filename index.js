@@ -202,6 +202,7 @@ function handleChatMessage(msg) {
 	io.emit('chat message', userOnline + ": " + msg);
 }
 
+var re = /^\w[ \w]*(?<=\w)$/
 /**
  *  handling the registration of a user
  *  the user will be warned if the following rules are broken:
@@ -216,12 +217,12 @@ function handleRegistration(name, userInfo, socket) {
 	var answer = {};
 	console.log(name + " tried to register")
 	console.log(users)
-	if(name.length > 0){
+	if(re.test(name)) {
 
 		/*
 		 * TODO: Name Global needs to be forbidden, too, set a pattern?
 		 */
-		if (!users[name]) { 
+		if (!users[name]) {
 			console.log(name + ' is registered');
 			var pair = {};
 			users[name] = pair;
@@ -240,10 +241,10 @@ function handleRegistration(name, userInfo, socket) {
 			answer.success = false;
 			answer.msg = name + " already exists";
 		}
-    }else{
-		console.log('user name: '+ name + ' is too short');
+    } else {
+		console.log('user name: '+ name + ' doesn\'t match pattern');
 		answer.success = false;
-		answer.msg = name +" is too short";
+		answer.msg = name + " doesnt't match the pattern: at least one character, and may not end or start with whitspace";
 	}
 	socket.emit('registrationStatus', answer);
 }

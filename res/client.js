@@ -3,6 +3,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 */
 $(function() {
 
+		$("#regInput").on("invalid", (event) => event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores"));
 		function addLeadingZeroToMinutes(dateObject){
 		mins = dateObject.getMinutes();
 		if(mins < 10){
@@ -21,22 +22,26 @@ $(function() {
 		    return timestamp;
 		}
 		
-		var chatBody = $('#chatBody');
+		var chatBody = $('#chatBody')[0];
 		/*
 		 * To be invoked after a new message has been received, to scroll to the
 		 * latest message
+		 * TODO: doesn't work with media files
 		 */
 		function scrollToBottom() {
-			chatBody[0].scrollTop = chatBody[0].scrollHeight;
+			chatBody.scrollTop = chatBody.scrollHeight;
 		}
 		
+		/*
+		 * Invoked whenever there is media files to be received
+		 */
 		function handleMediaFile(stream, data) {
 			
 			fileBuffer = [],
 		    fileLength = 0;
-			console.log('HANDLE MEDIA FILES TRIGGERED')
+			console.log('HANDLE MEDIA FILES TRIGGERED');
+			console.log(data);
 			stream.on('data', function (chunk) {
-				console.log('receiving CHUNK!')
 				fileLength += chunk.length;
 				console.log('fileLength: ' + fileLength)
                 // var progress = Math.floor((fileLength / fileInfo.size) *
@@ -46,7 +51,9 @@ $(function() {
             });
 			
 			 stream.on('end', function () {
-
+					if(fileLength != data.size) {
+						console.error("fileLength != data.size. --> corrupt file?")
+					}
 	                var filedata = new Uint8Array(fileLength),
 	                i = 0;
 
@@ -58,21 +65,38 @@ $(function() {
 	                });
 	                
 	                blob = new Blob([filedata], {
-	                    type : "image/png"
+	                    type : data.type
 	                }),
 	                url = window.URL.createObjectURL(blob);
 	                console.log("URL:");
-	                console.log(url);
-	                /*
-					 * TODO: needs own function TODO:and implemented for
-					 * private, too TODO: Handle all media files not just
-					 * images, adjust dropzone
+					console.log(url);
+					 /*
+					 * TODO: needs own function 
+					 * and implemented for private, too 
 					 */
-	                var img = document.createElement('img');
-	                img.src = url;
-	                $(img).css({'display': 'block'})
-	                $('#messages').append(img);
-	                scrollToBottom();
+					switch(data.type.substring(0, data.type.indexOf("/"))) {
+						case "image":
+							var img = document.createElement('img');
+							img.src = url;
+							$(img).css({'display': 'block'})
+							$('#messages').append(img);
+						break;
+						case "video":
+							var vid = document.createElement('video');
+							vid.src = url;
+							$(vid).attr('controls', '')
+							$(vid).css({'display': 'block'})
+							$('#messages').append(vid);
+						break;
+						case "audio":
+							var aud = document.createElement('audio');
+							aud.src = url;
+							$(aud).attr('controls', '')
+							$(aud).css({'display': 'block'})
+							$('#messages').append(aud);
+						break;
+					}
+					scrollToBottom();
 			 });
 		}
 		
@@ -104,7 +128,8 @@ $(function() {
 			ss(socket).emit('sendingbinary', stream, {
 	            data : file,
 	            size : file.size,
-	            name : file.name});
+				name : file.name,
+				type: file.type});
 			ss.createBlobReadStream(file).pipe(stream)
 			if (currentSID !== undefined) {
 				console.log('emit upload to ' + currentSID)
@@ -140,6 +165,7 @@ $(function() {
 			
 			for(var i = 0; i < e.dataTransfer.files.length; i++) {
 				var file = e.dataTransfer.files[i];
+				console.log("LOOPING OVER FILELIST: ", file);
 				handleFiles(file) // TODO: move loop to receiver
 			}
 		});
@@ -210,6 +236,9 @@ $(function() {
 					+ ": has left the room"))
 		}
 		
+		/*
+		* TODO: TO BE REMOVED
+		*/
 		function fileUploaded(filename) {
 			return markedMessage('', $('<a>').text(filename + ' has been uploaded to the server').attr('href', '/'+filename).attr("target", "_blank"))
 		}
@@ -232,41 +261,8 @@ $(function() {
 			socket.emit('registration', $('#regInput').val());
 			return false;
 		});
-
-		socket.on('registrationStatus', function(obj) {
-			if (obj.success) {
-				selfName = obj.selfName;
-				if (obj.users) {
-					console.log("all known users: ")
-					console.log(obj.users);
-					for ( var key in obj.users) {
-						if (key != selfName && !hashmap[key]) {
-							console.log("adding:")
-							console.log(key)
-							addUser(key, obj.users[key].connection); // connection
-																		// bad
-																		// name,
-																		// server
-																		// should
-																		// not
-																		// send
-																		// selfName,
-																		// obj
-																		// bad
-																		// name
-						}
-					}
-					$("#tabs").tabs("refresh");
-				}
-				$('#regOverlay').css("display", "none");
-				$('#blurry').css("filter", "none");
-			}else{
-				console.log(obj.msg);
-				$('#regOverlay #errorMessage').text(obj.msg);
-				$('$regInput').addClass('errorBoxOutline');
-			}
-		});
-
+		
+		//Triggered when Enter is pressed on the text-input or when the send button is clicked
 		$('#messageInput').submit(
 				function() {
 					console.log(callback)
@@ -296,45 +292,124 @@ $(function() {
 					scrollToBottom();
 					return false;
 				});
+		
+		/* ----------------------- SOCKET.IO CALLBACK FUNCTIONS ------------------------------*/
 
-		socket.on('chat message', function(messageObj) {
-			$('#messages').append(formatMessage(messageObj, 'recipientMessage'));
-			scrollToBottom();
-		});
-
-		socket.on('clientPrivateMessage', function(messageObj) {
+		/**
+		 * Notifies the server of a disconnect e.g. when the tab is closed
+		 * so that resources can be properly freed
+		 * @param {String} username 
+		 */
+		function handleUserisgone(username) {
+			console.log('disconnected ' + username)
+			removeUser(username);
+			markedMessageLeft(username);
+		}
+		
+		/**
+		 * called when a new user logs in.
+		 * adds the user to a new tab and leaves a marked message in the chat window
+		 * @param {String} userinfo 
+		 */
+		function handleNewuser(userinfo) {
+			console.log(userinfo);
+			addUser(userinfo.name, userinfo.socketid);
+			markedMessageEntered(userinfo.name);
+			$("#tabs").tabs("refresh");
+		}
+		
+		/**
+		 * TO BE REMOVED
+		 * @param {JSON} messageObj 
+		 */
+		function handleClientUpload(messageObj) {
+			console.log('uploadnotice: broadcast')
+			$('#messages').append(fileUploaded(messageObj.filename, " by ", messageObj.userName))
+		}
+		
+		/**
+		 * TO BE REMOVED
+		 * @param {*} messageObj 
+		 */
+		function handleClientPrivateUpload(messageObj) {
+			console.log('uploadnotice')
+			hashmap[messageObj.userName].panel.find(".privateMessage").append(fileUploaded(messageObj.filename))
+		}
+		
+		/**
+		 * Invoked whenever a user receives a whisper, adding the message
+		 * to the apropriate tab
+		 * @param {JSON} messageObj 
+		 */
+		function handleClientPrivateMessage(messageObj) {
 			// sender on server sent
 			console.log('reply from user: ' + messageObj.userName)
 			hashmap[messageObj.userName].panel.find(".privateMessage").append(
 					formatMessage(messageObj, 'recipientMessage'));
 					console.log(messageObj.userName + " is " + messageObj.mood)
 					scrollToBottom();
-		});
+		}
 		
-		socket.on('clientPrivateUpload', function(messageObj) {
-			console.log('uploadnotice')
-			hashmap[messageObj.userName].panel.find(".privateMessage").append(fileUploaded(messageObj.filename))
-		})
+		/**
+		 * Invoked whenver a brodcast message is received, adding it to the Global tab
+		 * @param {JSON} messageObj 
+		 */
+		function handleChatMessage(messageObj) {
+			$('#messages').append(formatMessage(messageObj, 'recipientMessage'));
+			scrollToBottom();
+		}
 		
-		socket.on('clientUpload', function(messageObj) {
-			console.log('uploadnotice: broadcast')
-			$('#messages').append(fileUploaded(messageObj.filename, " by ", messageObj.userName))
-		})
-
-		
-		socket.on('newuser', function(userinfo) {
-			console.log(userinfo);
-			addUser(userinfo.name, userinfo.socketid);
-			markedMessageEntered(userinfo.name);
-			$("#tabs").tabs("refresh");
-		});
-
-		socket.on('userisgone', function(username) {
-			console.log('disconnected ' + username)
-			removeUser(username);
-			markedMessageLeft(username);
-		})
-		
+		/** TODO: Possibly as return value of connection?
+		 * Callback for handling the registration.
+		 * Either registers the user to the server and loads all current know chat partners
+		 * or display an error in the UI giving more information on what went wrong
+		 * data-structure of obj: 
+		 * obj = {
+		 * 		users: {
+		 * 			"username1": {
+		 * 				"connection": socket.id
+		 * 			},
+		 * 			"username2": {
+		 * 				"connection": socket.id
+		 * 			}, ...
+		 * 		},
+		 * 		success: boolean,
+		 * 		selfName: String,
+		 * 		msg: String
+		 * }
+		 * @param {JSON} obj 
+		 */
+		function handleRegistrationStatus(obj) {
+			if (obj.success) {
+				selfName = obj.selfName;
+				if (obj.users) {
+					console.log("all known users: ")
+					console.log(obj.users);
+					for ( var key in obj.users) {
+						if (key != selfName && !hashmap[key]) {
+							console.log("adding:")
+							console.log(key)
+							addUser(key, obj.users[key].connection); // connection bad name server should not send selfName, obj bad name
+						}
+					}
+					$("#tabs").tabs("refresh");
+				}
+				$('#regOverlay').css("display", "none");
+				$('#blurry').css("filter", "none");
+			}else{
+				console.log(obj.msg);
+				$('#regOverlay #errorMessage').text(obj.msg);
+				$('$regInput').addClass('errorBoxOutline');
+			}
+		}
+		//See SOCKET.IO CALLBACK FUNCTIONS, registering all callback functions
+		socket.on('registrationStatus', (obj) => handleRegistrationStatus(obj));
+		socket.on('chat message', (messageObj) => handleChatMessage(messageObj));
+		socket.on('clientPrivateMessage', (messageObj) => handleClientPrivateMessage(messageObj));
+		socket.on('clientPrivateUpload', (messageObj) => handleClientPrivateUpload(messageObj))
+		socket.on('clientUpload', (messageObj) => handleClientUpload(messageObj))
+		socket.on('newuser', (userinfo) => handleNewuser(userinfo));
+		socket.on('userisgone', (username) => handleUserisgone(username))
 		ss(socket).on('serverPushMediaFile', (stream, data) => handleMediaFile(stream,data))
 
 		/* JQUERY-UI */
