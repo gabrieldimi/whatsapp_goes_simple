@@ -301,12 +301,22 @@ function connectToDB(){
 				param 1: The SQL query to be issued
 				param 2: The callback function to execute when the database server responds
 			*/
-			conn.query("create table Users( userId varchar(255), password varchar(255));", function(err,result) {
+			conn.query("insert into Users values( 'test', 'password');", function(err,result) {
 					
 			    if(err){
 					console.log("failed to create table users");
 				}else{
-					console.log("user table created");
+					console.log("adding values");
+					conn.query("select * from Users;", function(err,result) {
+						if(err){
+
+						}else{
+							console.log("all users" +result);
+						}
+					});
+
+				
+					
 				}
 				/*
 					Close the connection to the database
