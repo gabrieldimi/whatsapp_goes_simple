@@ -249,6 +249,13 @@ function handleRegistration(name, userInfo, socket) {
 			var newUser = {};
 			newUser.socketid = socket.id;
 			newUser.name = name;
+			addUserToDB(name,function(err,result){
+				if(err){
+
+				}else{
+					console.log("user added" + result);
+				}
+			});
 			socket.broadcast.emit('newuser',newUser);
 		} else {
 			console.log('user name: ' + name + ' already exists');
@@ -323,6 +330,11 @@ function connectToDB(){
 
 function doesUserExist(userName,callback){
 	databaseConnection.query(`select user from Users where user = ${userName}`, callback);
+}
+
+function addUserToDB(userName, callback){
+
+	databaseConnection.query(`insert into Users values(${userName});`,callback);
 }
 connectToDB();
 
