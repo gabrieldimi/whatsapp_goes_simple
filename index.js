@@ -4,12 +4,16 @@
 * @author: Gabriel Dimitrov
 */
 
+var fs = require("fs");
 const express = require('express')
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 var request = require('request')
+
+/*require the ibm_db module*/
+var ibmdb = require('ibm_db');
 
 /**
  * add folders to virtual namespace
@@ -24,7 +28,9 @@ let port = process.env.PORT || 3000;
 /**
  * key-value user database to keep track of active users
  */
-var users = {}
+var users = {};
+var databaseConnection;
+
 
 /**
  * this is a beauty function for adding a zero to the minutes of the server time
@@ -222,7 +228,17 @@ function handleRegistration(name, userInfo, socket) {
 		/*
 		 * TODO: Name Global needs to be forbidden, too, set a pattern?
 		 */
-		if (!users[name]) {
+		var queryResult = {};
+		doesUserExist(name,function(err,result){
+			if(err){
+                console.log("does user exist error",err);
+			}else{
+				queryResult.name = result;
+				console.log("does user exist",result);
+			}
+		});
+		console.log(queryResult.name);
+		if (!queryResult.name) {
 			console.log(name + ' is registered');
 			var pair = {};
 			users[name] = pair;
@@ -235,6 +251,13 @@ function handleRegistration(name, userInfo, socket) {
 			var newUser = {};
 			newUser.socketid = socket.id;
 			newUser.name = name;
+			addUserToDB(name,function(err,result){
+				if(err){
+					console.log("adding user error",err);
+				}else{
+					console.log("user added",result);
+				}
+			});
 			socket.broadcast.emit('newuser',newUser);
 		} else {
 			console.log('user name: ' + name + ' already exists');
@@ -272,6 +295,51 @@ io.on('connection', function(socket) {
 	ss(socket).on('sendingbinary', (incomingStream, data) => handleSendingBinary(incomingStream, data,socket));
 	
 });
+
+function connectToDB(){
+	console.log("Test program to access DB2 sample database");
+
+	/*Connect to the database server
+	  param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
+	  param 2: The Callback function to execute when connection attempt to the specified database is completed
+	*/
+	var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
+	var credentialsParsed = JSON.parse(credentialsUnparsed);
+	ibmdb.open("DRIVER={DB2};DATABASE="+credentialsParsed.db+";UID="+credentialsParsed.username+";PWD="+credentialsParsed.password+";HOSTNAME="+credentialsParsed.hostname+";port="+credentialsParsed.port, function(err, conn)
+	{
+			if(err) {
+			/*
+			  On error in connection, log the error message on console 
+			*/
+				  console.error("error: ", err.message);
+			} else {
+				console.log("testing bro");
+	
+			/*
+				On successful connection issue 
+				param 1: The SQL query to be issued
+				param 2: The callback function to execute when the database server responds
+			*/
+			databaseConnection = conn;
+			
+				// conn.close(function(){
+				// 	console.log("Connection Closed");
+				// });
+		}
+	});
+	
+}
+
+function doesUserExist(userName,callback){
+	databaseConnection.query(`select user from Users where user='${userName}'`, callback);
+}
+
+function addUserToDB(userName, callback){
+
+	databaseConnection.query(`insert into Users values('${userName}','');`,callback);
+}
+connectToDB();
+
 
 // Starting the server on specific port
 http.listen(port, function() {
