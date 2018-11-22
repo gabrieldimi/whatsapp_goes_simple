@@ -325,6 +325,7 @@ function connectToDB(){
 	});
 	
 }
+connectToDB();
 
 
 // Starting the server on specific port
