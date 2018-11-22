@@ -301,27 +301,21 @@ function connectToDB(){
 				param 1: The SQL query to be issued
 				param 2: The callback function to execute when the database server responds
 			*/
-			// conn.query("select * from employee fetch first 5 rows only", function(err, employees, moreResultSets) {
-			// 				console.log("FirstName \t\t LastName");
-			// 	console.log("----------\t\t---------");
-	
-			// 	/*
-			// 		Loop through the employees list returned from the select query and print the First name and last name of the employee	
-			// 	*/
-			// 				for (var i=0;i<employees.length;i++)
-			// 	{
-			// 		console.log(employees[i].FIRSTNME, "\t\t", employees[i].LASTNAME);
-			// 	}
-			// 	console.log("-----------------------");
-	
-			// 	/*
-			// 		Close the connection to the database
-			// 		param 1: The callback function to execute on completion of close function.
-			// 	*/
-			// 	conn.close(function(){
-			// 		console.log("Connection Closed");
-			// 	});
-			// });
+			conn.query("create table Users( userId varchar(255), password varchar(255));", function(err,result) {
+					
+			    if(err){
+					console.log("failed to create table users");
+				}else{
+					console.log("user table created");
+				}
+				/*
+					Close the connection to the database
+					param 1: The callback function to execute on completion of close function.
+				*/
+				conn.close(function(){
+					console.log("Connection Closed");
+				});
+			});
 		}
 	});
 	
