@@ -294,33 +294,34 @@ function connectToDB(){
 			*/
 				  console.error("error: ", err.message);
 			} else {
+				console.log("testing bro");
 	
 			/*
 				On successful connection issue the SQL query by calling the query() function on Database
 				param 1: The SQL query to be issued
 				param 2: The callback function to execute when the database server responds
 			*/
-			conn.query("select * from employee fetch first 5 rows only", function(err, employees, moreResultSets) {
-							console.log("FirstName \t\t LastName");
-				console.log("----------\t\t---------");
+			// conn.query("select * from employee fetch first 5 rows only", function(err, employees, moreResultSets) {
+			// 				console.log("FirstName \t\t LastName");
+			// 	console.log("----------\t\t---------");
 	
-				/*
-					Loop through the employees list returned from the select query and print the First name and last name of the employee	
-				*/
-							for (var i=0;i<employees.length;i++)
-				{
-					console.log(employees[i].FIRSTNME, "\t\t", employees[i].LASTNAME);
-				}
-				console.log("-----------------------");
+			// 	/*
+			// 		Loop through the employees list returned from the select query and print the First name and last name of the employee	
+			// 	*/
+			// 				for (var i=0;i<employees.length;i++)
+			// 	{
+			// 		console.log(employees[i].FIRSTNME, "\t\t", employees[i].LASTNAME);
+			// 	}
+			// 	console.log("-----------------------");
 	
-				/*
-					Close the connection to the database
-					param 1: The callback function to execute on completion of close function.
-				*/
-				conn.close(function(){
-					console.log("Connection Closed");
-				});
-			});
+			// 	/*
+			// 		Close the connection to the database
+			// 		param 1: The callback function to execute on completion of close function.
+			// 	*/
+			// 	conn.close(function(){
+			// 		console.log("Connection Closed");
+			// 	});
+			// });
 		}
 	});
 	
