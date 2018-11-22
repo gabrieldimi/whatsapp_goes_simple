@@ -11,6 +11,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 var request = require('request')
+
 /*require the ibm_db module*/
 var ibmdb = require('ibm_db');
 
@@ -27,7 +28,8 @@ let port = process.env.PORT || 3000;
 /**
  * key-value user database to keep track of active users
  */
-var users = {}
+var users = {};
+var databaseConnection;
 
 
 /**
@@ -226,7 +228,15 @@ function handleRegistration(name, userInfo, socket) {
 		/*
 		 * TODO: Name Global needs to be forbidden, too, set a pattern?
 		 */
-		if (!users[name]) {
+		var queryResult = {};
+		doesUserExist(name,function(err,result){
+			if(err){
+
+			}else{
+				queryResult.name = result;
+			}
+		});
+		if (!queryResult.name) {
 			console.log(name + ' is registered');
 			var pair = {};
 			users[name] = pair;
@@ -297,38 +307,22 @@ function connectToDB(){
 				console.log("testing bro");
 	
 			/*
-				On successful connection issue the SQL query by calling the query() function on Database
+				On successful connection issue 
 				param 1: The SQL query to be issued
 				param 2: The callback function to execute when the database server responds
 			*/
-			conn.query("insert into Users values( 'test', 'password');", function(err,result) {
-					
-			    if(err){
-					console.log("failed to create table users");
-				}else{
-					console.log("adding values");
-					conn.query("select * from Users;", function(err,result) {
-						if(err){
-
-						}else{
-							console.log("all users" +result);
-						}
-					});
-
-				
-					
-				}
-				/*
-					Close the connection to the database
-					param 1: The callback function to execute on completion of close function.
-				*/
-				conn.close(function(){
-					console.log("Connection Closed");
-				});
-			});
+			databaseConnection = conn;
+			
+				// conn.close(function(){
+				// 	console.log("Connection Closed");
+				// });
 		}
 	});
 	
+}
+
+function doesUserExist(userName,callback){
+	databaseConnection.query(`select user from Users where user = ${userName}`, callback);
 }
 connectToDB();
 
