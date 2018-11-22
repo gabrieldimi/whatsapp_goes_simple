@@ -48,7 +48,8 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 			<td style="text-align: center; vertical-align: middle;">
 				<div id="container">
 					<form id="registration">
-						<input id="regInput" type="text" placeholder="Enter username" pattern="^[\w ]+$">
+						<input id="regInput" class="regField" type="text" placeholder="Enter username">
+						<input id="passwd" class="regField" type="password" placeholder="Enter password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*\W).{8,}">
 					</form>
 					<div id="regLabel">enter username</div>
 					<div id='errorMessage'></div>
