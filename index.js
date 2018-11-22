@@ -231,11 +231,13 @@ function handleRegistration(name, userInfo, socket) {
 		var queryResult = {};
 		doesUserExist(name,function(err,result){
 			if(err){
-
+                console.log("does user exist error",err);
 			}else{
 				queryResult.name = result;
+				console.log("does user exist",result);
 			}
 		});
+		console.log(queryResult.name);
 		if (!queryResult.name) {
 			console.log(name + ' is registered');
 			var pair = {};
@@ -251,9 +253,9 @@ function handleRegistration(name, userInfo, socket) {
 			newUser.name = name;
 			addUserToDB(name,function(err,result){
 				if(err){
-
+					console.log("adding user error",err);
 				}else{
-					console.log("user added" + result);
+					console.log("user added",result);
 				}
 			});
 			socket.broadcast.emit('newuser',newUser);
@@ -329,12 +331,12 @@ function connectToDB(){
 }
 
 function doesUserExist(userName,callback){
-	databaseConnection.query(`select user from Users where user = ${userName}`, callback);
+	databaseConnection.query(`select user from Users where user='${userName}'`, callback);
 }
 
 function addUserToDB(userName, callback){
 
-	databaseConnection.query(`insert into Users values(${userName});`,callback);
+	databaseConnection.query(`insert into Users values('${userName}','');`,callback);
 }
 connectToDB();
 
