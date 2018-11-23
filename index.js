@@ -229,7 +229,7 @@ var re = /^\w[ \w]*(?<=\w)$/
  *  the user will be warned if the following rules are broken:
  *  1. the user name has to be longer then 0 characters
  *  2. the user name has to be unique
- *  3. TODO: user name must match the pattern (...)
+ *  3. user name must match the pattern
  *  @param {String} name
  *  @param {JSON} userInfo
  *  @param {Object} socket
@@ -241,15 +241,17 @@ function handleRegistration(name, userInfo, socket) {
 	if(re.test(name)) {
 
 		/*
-		 * TODO: Name Global needs to be forbidden, too, set a pattern?
+		 * TODO: Name Global needs to be forbidden, too
 		 */
 		var queryResult = {};
-		doesUserExist(name,function(err,result){
+		doesUserExist(name,function(err,result, moreresults){
 			if(err){
                 logger.log('info', "does user exist error",err);
 			}else{
 				queryResult.name = result;
 				logger.log('info', "does user exist",result);
+				logger.log('info', 'more results: ')
+				logger.log('info', moreresults);
 			}
 		});
 		logger.log('info', queryResult.name);
@@ -358,7 +360,7 @@ function connectToDB(){
 }
 
 function doesUserExist(userName,callback){
-	databaseConnection.query(`select user from Users where user='${userName}'`, callback);
+	databaseConnection.query(`select user from Users where userid='${userName}'`, callback);
 }
 
 function addUserToDB(userName, callback){

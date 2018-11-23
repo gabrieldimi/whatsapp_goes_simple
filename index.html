@@ -49,7 +49,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 				<div id="container">
 					<form id="registration" action="">
 						<!--pattern in pattern atrribute is automatically anchored-->
-						<input id="regInput" class="regField" type="text" placeholder="Enter username" pattern="\w+">
+						<input id="regInput" class="regField" type="text" placeholder="Enter username" pattern="\w+" required>
 						<!-- Pattern requires the user to enter a password that contains at least
 							 one uppercase,
 							 one lowercase,
@@ -57,7 +57,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 							 and one special character.
 							 Password must be at least 8 characters long
 						-->
-						<input id="passwd" class="regField" type="password" placeholder="Enter password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*\W).{8,}">
+						<input id="passwd" class="regField" type="password" placeholder="Enter password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*\W).{8,}" required>
 						<!-- A submit button is required when there's more than one input????-->
 						<input type="submit" value="submit">
 					</form>
