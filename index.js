@@ -360,7 +360,7 @@ function connectToDB(){
 }
 
 function doesUserExist(userName,callback){
-	databaseConnection.query(`select user from Users where userid='${userName}'`, callback);
+	databaseConnection.query(`select userid from Users where userid='${userName}'`, callback);
 }
 
 function addUserToDB(userName, callback){
