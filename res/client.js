@@ -4,6 +4,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 $(function() {
 
 		$("#regInput").on("invalid", (event) => event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores"));
+		$("#passwd").on("invalid", (event) => event.target.setCustomValidity("Password must contain at least on uppercase, one lowercase, one digit and one special character. The password must be at least 8 characters long"));
 		function addLeadingZeroToMinutes(dateObject){
 		mins = dateObject.getMinutes();
 		if(mins < 10){

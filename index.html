@@ -47,11 +47,21 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 		<tr>
 			<td style="text-align: center; vertical-align: middle;">
 				<div id="container">
-					<form id="registration">
-						<input id="regInput" class="regField" type="text" placeholder="Enter username">
+					<form id="registration" action="">
+						<!--pattern in pattern atrribute is automatically anchored-->
+						<input id="regInput" class="regField" type="text" placeholder="Enter username" pattern="\w+">
+						<!-- Pattern requires the user to enter a password that contains at least
+							 one uppercase,
+							 one lowercase,
+							 one digit
+							 and one special character.
+							 Password must be at least 8 characters long
+						-->
 						<input id="passwd" class="regField" type="password" placeholder="Enter password" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*\W).{8,}">
+						<!-- A submit button is required when there's more than one input????-->
+						<input type="submit" value="submit">
 					</form>
-					<div id="regLabel">enter username</div>
+					<div id="regLabel">Registration</div>
 					<div id='errorMessage'></div>
 				</div>
 			</td>
