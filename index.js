@@ -21,6 +21,17 @@ var ibmdb = require('ibm_db');
 app.use(express.static('icons'));
 app.use(express.static('res'));
 
+app.enable('trust proxy');
+//Enforcing HTTPS, redirects visitor to https if no https has been specified
+app.use (function (req, res, next) {
+  if (req.secure || process.env.BLUEMIX_REGION === undefined) {
+    next();
+  } else {
+    console.log('redirecting to https');
+    res.redirect('https://' + req.headers.host + req.url);
+  }
+});
+
 /**
  * handle port on ibmcloud and stay compatible for local development
  */
