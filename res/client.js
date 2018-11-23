@@ -68,7 +68,8 @@ $(function() {
 	                blob = new Blob([filedata], {
 	                    type : data.type
 	                }),
-	                url = window.URL.createObjectURL(blob);
+					url = window.URL.createObjectURL(blob);
+					var mediaElem;
 	                console.log("URL:");
 					console.log(url);
 					 /*
@@ -77,26 +78,20 @@ $(function() {
 					 */
 					switch(data.type.substring(0, data.type.indexOf("/"))) {
 						case "image":
-							var img = document.createElement('img');
-							img.src = url;
-							$(img).css({'display': 'block'})
-							$('#messages').append(img);
+							var mediaElem = document.createElement('img');
 						break;
 						case "video":
-							var vid = document.createElement('video');
-							vid.src = url;
-							$(vid).attr('controls', '')
-							$(vid).css({'display': 'block'})
-							$('#messages').append(vid);
+							var mediaElem = document.createElement('video');
+							$(mediaElem).attr('controls', '')
 						break;
 						case "audio":
-							var aud = document.createElement('audio');
-							aud.src = url;
-							$(aud).attr('controls', '')
-							$(aud).css({'display': 'block'})
-							$('#messages').append(aud);
+							var mediaElem = document.createElement('audio');
+							$(mediaElem).attr('controls', '')
 						break;
 					}
+					$(mediaElem).addClass('mediaMessage')
+					mediaElem.src = url;
+					$('#messages').append(mediaElem);
 					scrollToBottom();
 			 });
 		}
