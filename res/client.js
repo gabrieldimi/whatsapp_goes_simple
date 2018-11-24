@@ -3,34 +3,104 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 */
 $(function() {
 
-		$("#regInput").on("invalid", (event) => event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores"));
-		$("#passwd").on("invalid", (event) => event.target.setCustomValidity("Password must contain at least one uppercase, one lowercase, one digit and one special character. The password must be at least 8 characters long"));
-		$("#toLogin").on("click", () => {
-			$("#loginContainer").css('display', 'block');
-			$("#container").css('display', 'none')
+
+		$("#profilePicker").on("change", (event) => {
+			var file = event.target.files[0];
+			var url = URL.createObjectURL(file);
+			$("#profilePreview").attr('src', url);
 		})
 
-		$("#toRegistration").on("click", () => {
-			$("#container").css('display', 'block');
-			$("#loginContainer").css('display', 'none')
-		})
-
-		var videoOverlay = $("#videoOverlay")
-		var preview = $("#webcamPreview")
-		$("#captureWebcam").on("click", () => {
-			if (navigator.mediaDevices.getUserMedia) {
-				navigator.mediaDevices.getUserMedia({video: true}).then(function(stream) {
-					videoOverlay.css('display', 'block')
-					preview[0].srcObject = stream;
-					console.log("webcam")
-					console.log(stream)
-					console.log(preview.srcObject)
-				}).catch(function(error) {
-					console.log("Something went wrong!");
-					console.log(error)
-				});
+		/* Making sure the user gets quick feedback whether the input was correct*/
+		function addCustomInputErrorMessages() {
+			$("#regInput").on("invalid", (event) => {
+				if(event.target.validity.patternMismatch) {
+				event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores")
+			} else {
+				//Needs to be empty to validate
+				event.target.setCustomValidity("");
 			}
-		})
+			}
+			);
+
+			$("#passwd").on("input", (event) => {
+				if(event.target.validity.patternMismatch) {
+					event.target.setCustomValidity("Password must contain at least one uppercase, one lowercase, one digit and one special character. The password must be at least 8 characters long")
+				} else {
+					//Needs to be empty to validate
+					event.target.setCustomValidity("");
+				}
+			}
+			);
+		}
+		addCustomInputErrorMessages();
+
+		/* Adds the functionality to switch between
+		 * the registration form
+		 * and the login form
+		 */
+		function addFormToggle() {
+			$("#toLogin").on("click", () => {
+				$("#loginContainer").css('display', 'block');
+				$("#container").css('display', 'none')
+			})
+
+			$("#toRegistration").on("click", () => {
+				$("#container").css('display', 'block');
+				$("#loginContainer").css('display', 'none')
+			})
+		}
+		addFormToggle();
+
+		/* Adds the functionality
+		 * to take a screenshot
+		 * right from the webcam
+		 */
+		function prepareWebcamUI() {
+			var captureWebcam = $("#captureWebcam");
+			var takeSnapshot = $("#takeSnapshot")
+			var stopWebcam = $("#stopWebcam")
+			var regOverlay = $("#regOverlay")
+			var videoOverlay = $("#videoOverlay")
+			var preview = $("#webcamPreview")
+			var profilePreview = $("#profilePreview")
+			var profileCanvas = $("#profileCanvas")
+			var mediaStreamTrack;
+			ctx = profileCanvas[0].getContext('2d')
+			captureWebcam.on("click", () => {
+				if (navigator.mediaDevices.getUserMedia) {
+					navigator.mediaDevices.getUserMedia({video: true}).then(function(stream) {
+						videoOverlay.css('display', 'block')
+						regOverlay.css('filter', 'blur(1px)')
+						preview[0].srcObject = stream;
+						mediaStreamTrack = stream.getVideoTracks()[0]
+						console.log("webcam stream started")
+					}).catch(function(error) {
+						console.log("Webcam: Something went wrong!");
+						console.log(error)
+					});
+				} else {
+					//TODO: disable button
+					console.log("navigator.mediaDevices.getUserMedia API not available")
+				}
+			})
+
+			takeSnapshot.on('click', () => {
+					ctx.drawImage(preview[0], 0, 0, 256, 256);
+					profileCanvas[0].toBlob(blob => {
+						url = URL.createObjectURL(blob);
+						profilePreview.attr('src', url)
+					})
+			})
+
+			stopWebcam.on("click", () => {
+				videoOverlay.css('display', 'none')
+				regOverlay.css('filter', '')
+				if(mediaStreamTrack) {
+					mediaStreamTrack.stop();
+				}
+			});
+		}
+		prepareWebcamUI();
 
 		function addLeadingZeroToMinutes(dateObject){
 		mins = dateObject.getMinutes();
@@ -54,7 +124,6 @@ $(function() {
 		/*
 		 * To be invoked after a new message has been received, to scroll to the
 		 * latest message
-		 * TODO: doesn't work with media files
 		 */
 		function scrollToBottom() {
 			chatBody.scrollTop = chatBody.scrollHeight;
