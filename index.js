@@ -246,10 +246,11 @@ function handleRegistration(name, userInfo, socket) {
 		var queryResult = {};
 		doesUserExist(name,function(err,result, moreresults){
 			if(err){
-                logger.log('info', "does user exist error",err);
+                logger.log('error', "doesUserExist()",err);
 			}else{
 				queryResult.name = result;
 				logger.log('info', "does user exist",result);
+				logger.log('info', result[0]);
 				logger.log('info', 'more results: ')
 				logger.log('info', moreresults);
 			}

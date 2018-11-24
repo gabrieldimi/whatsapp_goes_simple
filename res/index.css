@@ -1,4 +1,4 @@
-/* 
+/*
 Contributors: Gabriel Dimitrov, Julian Leuze
 */
 
@@ -123,7 +123,7 @@ float:left;
 }
 
 #errorMessage {
-	position:absolute;
+	/*position:absolute;*/
 	width:100%;
 	font-size: 24pt;
 	color:#d00;
@@ -191,7 +191,7 @@ float:left;
 	border-radius: 4px;
 	border: 4px solid rgba(81, 203, 238, 1);
 	padding: 25px;
-	width: 45%;
+	width: 90%;
 }
 
 .regField:focus {
@@ -201,8 +201,25 @@ float:left;
 	border-radius: 10px;
 }
 
-#container {
+.container {
 	position: relative;
+}
+
+#registration > * {
+	margin-top: 10px !important;
+}
+
+#submitBtn {
+	display: block;
+	margin: auto;
+	font-size: 24pt;
+}
+
+.pseudoLink {
+	width: 100%;
+	display: block;
+	text-align: center;
+	margin: auto;
 }
 
 #regLabel {

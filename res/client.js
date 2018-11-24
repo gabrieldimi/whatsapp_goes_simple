@@ -1,10 +1,37 @@
-/* 
+/*
 Contributors: Gabriel Dimitrov, Julian Leuze
 */
 $(function() {
 
 		$("#regInput").on("invalid", (event) => event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores"));
-		$("#passwd").on("invalid", (event) => event.target.setCustomValidity("Password must contain at least on uppercase, one lowercase, one digit and one special character. The password must be at least 8 characters long"));
+		$("#passwd").on("invalid", (event) => event.target.setCustomValidity("Password must contain at least one uppercase, one lowercase, one digit and one special character. The password must be at least 8 characters long"));
+		$("#toLogin").on("click", () => {
+			$("#loginContainer").css('display', 'block');
+			$("#container").css('display', 'none')
+		})
+
+		$("#toRegistration").on("click", () => {
+			$("#container").css('display', 'block');
+			$("#loginContainer").css('display', 'none')
+		})
+
+		var videoOverlay = $("#videoOverlay")
+		var preview = $("#webcamPreview")
+		$("#captureWebcam").on("click", () => {
+			if (navigator.mediaDevices.getUserMedia) {
+				navigator.mediaDevices.getUserMedia({video: true}).then(function(stream) {
+					videoOverlay.css('display', 'block')
+					preview[0].srcObject = stream;
+					console.log("webcam")
+					console.log(stream)
+					console.log(preview.srcObject)
+				}).catch(function(error) {
+					console.log("Something went wrong!");
+					console.log(error)
+				});
+			}
+		})
+
 		function addLeadingZeroToMinutes(dateObject){
 		mins = dateObject.getMinutes();
 		if(mins < 10){
@@ -12,7 +39,7 @@ $(function() {
 		}
 		return mins;
 		}
-		
+
 		function getTimeStamp()	{
 			var timestamp ={};
 			var dateObj = new Date();
@@ -22,7 +49,7 @@ $(function() {
 			timestamp.date = date;
 		    return timestamp;
 		}
-		
+
 		var chatBody = $('#chatBody')[0];
 		/*
 		 * To be invoked after a new message has been received, to scroll to the
@@ -32,12 +59,12 @@ $(function() {
 		function scrollToBottom() {
 			chatBody.scrollTop = chatBody.scrollHeight;
 		}
-		
+
 		/*
 		 * Invoked whenever there is media files to be received
 		 */
 		function handleMediaFile(stream, data) {
-			
+
 			fileBuffer = [],
 		    fileLength = 0;
 			console.log('HANDLE MEDIA FILES TRIGGERED');
@@ -50,7 +77,7 @@ $(function() {
                 // progress = Math.max(progress - 2, 1);
                 fileBuffer.push(chunk);
             });
-			
+
 			 stream.on('end', function () {
 					if(fileLength != data.size) {
 						console.error("fileLength != data.size. --> corrupt file?")
@@ -64,7 +91,7 @@ $(function() {
 	                        filedata[i] = buff[j];
 	                    }
 	                });
-	                
+
 	                blob = new Blob([filedata], {
 	                    type : data.type
 	                }),
@@ -73,8 +100,8 @@ $(function() {
 	                console.log("URL:");
 					console.log(url);
 					 /*
-					 * TODO: needs own function 
-					 * and implemented for private, too 
+					 * TODO: needs own function
+					 * and implemented for private, too
 					 */
 					switch(data.type.substring(0, data.type.indexOf("/"))) {
 						case "image":
@@ -95,32 +122,32 @@ $(function() {
 					scrollToBottom();
 			 });
 		}
-		
+
 		var dropArea = $('#chatBody')[0];
 		var messageID = 0;
-		
+
 		function preventDefaults(e) {
 			e.preventDefault();
 			e.stopPropagation();
 		}
-		
+
 		function unhighlight() {
 			$('#dropOverlay').css({'opacity': '0'})
 		}
-		
+
 		function highlight() {
 			$('#dropOverlay').css({'opacity': '0.5', 'border':'3px dashed white'});
 		}
-		
+
 		function getMessageID() {
 			return messageID++;
 		}
-		
+
 		function handleFiles(file) {
 			console.log(file)
 			var stream = ss.createStream();
-		    
-		    
+
+
 			ss(socket).emit('sendingbinary', stream, {
 	            data : file,
 	            size : file.size,
@@ -138,34 +165,34 @@ $(function() {
 				socket.emit('upload', file.name);
 			}
 		}
-		
+
 		// Prevent Default Handling for these events, i.e. opening the dropped
 		// file in a new tab
 		;['dragenter', 'dragleave', 'dragover', 'drop'].forEach(eventName => {
 			dropArea.addEventListener(eventName, preventDefaults, false);
 		});
-		
-		
+
+
 		// give visual feedback on dragging
 		;['dragenter', 'dragover'].forEach(eventName => {
 			dropArea.addEventListener(eventName, highlight, false);
 		});
-		
+
 		;['dragleave', 'drop'].forEach(eventName => {
 			dropArea.addEventListener(eventName, unhighlight, false);
 		});
-		
-		
+
+
 		dropArea.addEventListener('drop', function(e) {
 			console.log(e.dataTransfer.files);
-			
+
 			for(var i = 0; i < e.dataTransfer.files.length; i++) {
 				var file = e.dataTransfer.files[i];
 				console.log("LOOPING OVER FILELIST: ", file);
 				handleFiles(file) // TODO: move loop to receiver
 			}
 		});
-		
+
 		var nr = 2;
 		// adds a new tab and Panel for every user
 		function addUser(name, id) {
@@ -231,14 +258,14 @@ $(function() {
 			$('#messages').append(markedMessage('leave.png', username
 					+ ": has left the room"))
 		}
-		
+
 		/*
 		* TODO: TO BE REMOVED
 		*/
 		function fileUploaded(filename) {
 			return markedMessage('', $('<a>').text(filename + ' has been uploaded to the server').attr('href', '/'+filename).attr("target", "_blank"))
 		}
-		
+
 		// getting timestamp for posted message from server
 		function callback(timestamp, messageID) {
 			console.log('server callback timestamp: ');
@@ -257,7 +284,7 @@ $(function() {
 			socket.emit('registration', $('#regInput').val());
 			return false;
 		});
-		
+
 		//Triggered when Enter is pressed on the text-input or when the send button is clicked
 		$('#messageInput').submit(
 				function() {
@@ -288,24 +315,24 @@ $(function() {
 					scrollToBottom();
 					return false;
 				});
-		
+
 		/* ----------------------- SOCKET.IO CALLBACK FUNCTIONS ------------------------------*/
 
 		/**
 		 * Notifies the server of a disconnect e.g. when the tab is closed
 		 * so that resources can be properly freed
-		 * @param {String} username 
+		 * @param {String} username
 		 */
 		function handleUserisgone(username) {
 			console.log('disconnected ' + username)
 			removeUser(username);
 			markedMessageLeft(username);
 		}
-		
+
 		/**
 		 * called when a new user logs in.
 		 * adds the user to a new tab and leaves a marked message in the chat window
-		 * @param {String} userinfo 
+		 * @param {String} userinfo
 		 */
 		function handleNewuser(userinfo) {
 			console.log(userinfo);
@@ -313,29 +340,29 @@ $(function() {
 			markedMessageEntered(userinfo.name);
 			$("#tabs").tabs("refresh");
 		}
-		
+
 		/**
 		 * TO BE REMOVED
-		 * @param {JSON} messageObj 
+		 * @param {JSON} messageObj
 		 */
 		function handleClientUpload(messageObj) {
 			console.log('uploadnotice: broadcast')
 			$('#messages').append(fileUploaded(messageObj.filename, " by ", messageObj.userName))
 		}
-		
+
 		/**
 		 * TO BE REMOVED
-		 * @param {*} messageObj 
+		 * @param {*} messageObj
 		 */
 		function handleClientPrivateUpload(messageObj) {
 			console.log('uploadnotice')
 			hashmap[messageObj.userName].panel.find(".privateMessage").append(fileUploaded(messageObj.filename))
 		}
-		
+
 		/**
 		 * Invoked whenever a user receives a whisper, adding the message
 		 * to the apropriate tab
-		 * @param {JSON} messageObj 
+		 * @param {JSON} messageObj
 		 */
 		function handleClientPrivateMessage(messageObj) {
 			// sender on server sent
@@ -345,21 +372,21 @@ $(function() {
 					console.log(messageObj.userName + " is " + messageObj.mood)
 					scrollToBottom();
 		}
-		
+
 		/**
 		 * Invoked whenver a brodcast message is received, adding it to the Global tab
-		 * @param {JSON} messageObj 
+		 * @param {JSON} messageObj
 		 */
 		function handleChatMessage(messageObj) {
 			$('#messages').append(formatMessage(messageObj, 'recipientMessage'));
 			scrollToBottom();
 		}
-		
+
 		/** TODO: Possibly as return value of connection?
 		 * Callback for handling the registration.
 		 * Either registers the user to the server and loads all current know chat partners
 		 * or display an error in the UI giving more information on what went wrong
-		 * data-structure of obj: 
+		 * data-structure of obj:
 		 * obj = {
 		 * 		users: {
 		 * 			"username1": {
@@ -373,7 +400,7 @@ $(function() {
 		 * 		selfName: String,
 		 * 		msg: String
 		 * }
-		 * @param {JSON} obj 
+		 * @param {JSON} obj
 		 */
 		function handleRegistrationStatus(obj) {
 			if (obj.success) {
