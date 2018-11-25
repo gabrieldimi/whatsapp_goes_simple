@@ -358,13 +358,13 @@ $(function() {
 			var writableStream = ss.createStream();
 			var file = $('#profilePreview').attr('src');
 			console.log('file:', file)
-			if(file.indexOf == 0) {
+			if(file.indexOf('blob:') == 0) {
 				var registrationData = {};
 				registrationData.userName = $('#regInput').val();
 				registrationData.password = $('#passwd').val();
 				registrationData.profilePictureStream = writableStream;
 				ss(socket).emit('registration', $('#regInput').val());
-				ss.createBlobReadStream(file).pipe(stream)
+				ss.createBlobReadStream(file).pipe(writableStream)
 			} else {
 				$("#errorMessage").text('please provide a profile picture.')
 			}
