@@ -60,8 +60,8 @@ function addLeadingZeroToMinutes(dateObject){
 }
 
 /**
- * 
- * formats incoming messages, adding a timestamp and a date 
+ *
+ * formats incoming messages, adding a timestamp and a date
  * to the message and packing the message in JSON-Object
  * @param {JSON} data
  * @param {String} userOnline
@@ -84,10 +84,10 @@ function sendMessageWithTimestamp (data,userOnline,callback,messageID){
 }
 
 /**
- * 
- * sends POST request to the tone analyzer service and 
+ *
+ * sends POST request to the tone analyzer service and
  * receives a response if the data evaluates to happiness or sadness
- * this function contains are Promise(), in order that it can be called synchronously with await. 
+ * this function contains are Promise(), in order that it can be called synchronously with await.
  * @param {JSON} data
  */
 function analyzeMood(data) {
@@ -119,9 +119,9 @@ logger.log('info', 'analyzed mood...')
 /**
  * Handles the disconnection of a user
  * Deletes the user from the internal user list
- * @param {Boolean} hasRegistrated 
- * @param {String} userOnline 
- * @param {Object} socket 
+ * @param {Boolean} hasRegistrated
+ * @param {String} userOnline
+ * @param {Object} socket
  */
 function handleDisconnect(hasRegistrated, userOnline, socket) {
 	if (hasRegistrated) {
@@ -131,15 +131,15 @@ function handleDisconnect(hasRegistrated, userOnline, socket) {
 	}
 	logger.log('info', 'user disconnected');
 }
- 
+
 /**
  * Delivers broadcast message to all users who are registered with socket.io
  * data-structure of param data: TODO: data = { }
- * @param {JSON} data 
- * @param {Function} callback 
- * @param {String} messageID 
- * @param {String} userOnline 
- * @param {Object} socket 
+ * @param {JSON} data
+ * @param {Function} callback
+ * @param {String} messageID
+ * @param {String} userOnline
+ * @param {Object} socket
  */
 function handleBroadcast(data, callback,messageID, userOnline, socket){
 	logger.log('info', callback);
@@ -150,12 +150,12 @@ function handleBroadcast(data, callback,messageID, userOnline, socket){
 }
 
 /**
- * Delivers private message to a specific user, adding the mood of the sender 
+ * Delivers private message to a specific user, adding the mood of the sender
  * Callback for when whisper is issued data-structure of param data see:
- * @param {JSON} data 
- * @param {Function} callback 
- * @param {String} messageID 
- * @param {String} userOnline 
+ * @param {JSON} data
+ * @param {Function} callback
+ * @param {String} messageID
+ * @param {String} userOnline
  */
 async function handlePrivateMessage(data,callback,messageID, userOnline) {
 	logger.log('info', 'callback: ' + callback)
@@ -170,9 +170,9 @@ async function handlePrivateMessage(data,callback,messageID, userOnline) {
 /**
  * Sends media files using streams in order not to save files on the server
  * the server works only as a relay, their is no fishy business going on here, sadly NSA is always watching
- * @param {Object} incomingStream 
- * @param {JSON} data 
- * @param {Object} socket 
+ * @param {Object} incomingStream
+ * @param {JSON} data
+ * @param {Object} socket
  */
 function handleSendingBinary(incomingStream, data,socket) {
 	logger.log('info', data);
@@ -323,41 +323,42 @@ io.on('connection', function(socket) {
 	socket.on('privateUpload', (data, filename) => handlePrivateUpload(data, filename))
 	socket.on('upload', (filename) => handleUpload(filename, socket, userInfo.userOnline))
 	ss(socket).on('sendingbinary', (incomingStream, data) => handleSendingBinary(incomingStream, data,socket));
-	
+
 });
 
 function connectToDB(){
 	logger.log('info', "Test program to access DB2 sample database");
 
 	/*Connect to the database server
-	  param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
+	  param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber
 	  param 2: The Callback function to execute when connection attempt to the specified database is completed
 	*/
 	var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
 	var credentialsParsed = JSON.parse(credentialsUnparsed);
+  //TODO: uses HTTPS?
 	ibmdb.open("DRIVER={DB2};DATABASE="+credentialsParsed.db+";UID="+credentialsParsed.username+";PWD="+credentialsParsed.password+";HOSTNAME="+credentialsParsed.hostname+";port="+credentialsParsed.port, function(err, conn)
 	{
 			if(err) {
 			/*
-			  On error in connection, log the error message on console 
+			  On error in connection, log the error message on console
 			*/
 				  console.error("error: ", err.message);
 			} else {
 				logger.log('info', "testing bro");
-	
+
 			/*
-				On successful connection issue 
+				On successful connection issue
 				param 1: The SQL query to be issued
 				param 2: The callback function to execute when the database server responds
 			*/
 			databaseConnection = conn;
-			
+
 				// conn.close(function(){
 				// 	logger.log('info', "Connection Closed");
 				// });
 		}
 	});
-	
+
 }
 
 function doesUserExist(userName,callback){
