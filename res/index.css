@@ -47,13 +47,7 @@ html, body {
 	margin-right: .5%;
 }
 
-#profilePreview {
-	max-width: 256px;
-	max-height: 256px;
-}
-
-
-#sendBtn {
+form button {
 	width: 9%;
 	background: #007fff;
 	border: none;
