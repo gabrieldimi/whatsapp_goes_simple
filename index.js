@@ -4,23 +4,25 @@
 * @author: Gabriel Dimitrov
 */
 
+/**
+ * requiring modules
+ */
 var fs = require("fs");
 var sha256 = require('sha256');
+var request = require('request')
+var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
+var ibmdb = require('ibm_db');
 const express = require('express')
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
-var request = require('request')
 const logger = require('./log.js')
-var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
 
 logger.debugLevel = 'info';
 logger.log('info', 'logger test');
 
 
-/*require the ibm_db module*/
-var ibmdb = require('ibm_db');
 
 /**
  * add folders to virtual namespace
@@ -263,8 +265,6 @@ async function handleRegistration(registrationData, userInfo, socket) {
 		}
 	  });
 	  
-	  
-	var userPictureStream =
 	logger.log('info', name + " tried to register")
 	//logger.log('info', users)
 	if(re.test(name)) {
@@ -329,7 +329,7 @@ io.on('connection', function(socket) {
 			hasRegistrated: null
 	}
 	//See SOCKET.IO CALLBACK FUNCTIONS Comment
-	socket.on("registration", (registrationData) => handleRegistration(registrationData, userInfo, socket));
+	ss(socket).on("registration", (registrationData) => handleRegistration(registrationData, userInfo, socket));
 	socket.on('chat message', (msg) => handleChatMessage(msg));
 	socket.on('disconnect', () => handleDisconnect(userInfo.hasRegistrated, userInfo.userOnline, socket));
 	socket.on('broadcast', (data, callback,messageID) => handleBroadcast(data, callback,messageID, userInfo.userOnline, socket));
