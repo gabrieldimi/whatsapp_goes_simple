@@ -242,6 +242,29 @@ async function handleRegistration(registrationData, userInfo, socket) {
 	var answer = {};
 	var name = registrationData.userName;
 	var passwordHash = sha256(registrationData.password);
+	var profilePictureStream = registrationData.profilePictureStream;
+
+	var visualRecognition = new VisualRecognitionV3({
+		version: '2018-03-19',
+		iam_apikey: 'npDYkj5gmFajccbJR8CQ1C2MGLPRpgjZdxsE9vkJoK8Z'
+	});
+
+	var params = {
+		image_files : profilePictureStream
+	};
+	
+	var visualRecognitionReponse;
+	visualRecognition.detectFaces(params, function(err, response) {
+		if (err) { 
+		  logger.log(err);
+		} else {
+		  logger.log(JSON.stringify(response, null, 2))
+		  visualRecognitionReponse = response;
+		}
+	  });
+	  
+	  
+	var userPictureStream =
 	logger.log('info', name + " tried to register")
 	//logger.log('info', users)
 	if(re.test(name)) {
@@ -317,6 +340,10 @@ io.on('connection', function(socket) {
 	
 });
 
+/**
+ * Handles connection of server to ibm database, uses a promise in order that this function runs asynchronously.
+ * Connection is opened via credentials found in DBcredentials.json
+ */
 function connectToDB(){
 	return new Promise(function (resolve, reject) {
 		logger.log('info', "Accessing the ibm database");
@@ -345,11 +372,18 @@ function connectToDB(){
 		});
 	});	
 }
- 
+
+/**
+ * Is used to call a function to connect to the ibm database
+ */
 async function callConnectionToDatabase(){
 	databaseConnection = await connectToDB();
 }
 
+/**
+ * Checks if the user with a specific name is already saved in the database
+ * @param {String} userName 
+ */
 function doesUserExist(userName){
 	return new Promise(function (resolve, reject) {
 		databaseConnection.query(`select userid from Users where USERID='${userName}'`, function(err,result, moreresults){
@@ -366,7 +400,11 @@ function doesUserExist(userName){
 	});
 	
 }
-
+/**
+ * Handles adding users with name and password to the database, using a query request
+ * @param {String} userName 
+ * @param {String} passwordHash 
+ */
 function addUserToDB(userName,passwordHash){
 	return new Promise(function (resolve, reject) {
 		databaseConnection.query(`insert into Users values('${userName}','${passwordHash}');`,function(err,result){
