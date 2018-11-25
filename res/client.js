@@ -363,7 +363,8 @@ $(function() {
 				registrationData.userName = $('#regInput').val();
 				registrationData.password = $('#passwd').val();
 				registrationData.profilePictureStream = writableStream;
-				ss(socket).emit('registration', $('#regInput').val());
+				console.log(registrationData);
+				ss(socket).emit('registration', registrationData);
 				ss.createBlobReadStream(file).pipe(writableStream)
 			} else {
 				$("#errorMessage").text('please provide a profile picture.')
