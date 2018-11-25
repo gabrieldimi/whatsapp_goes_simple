@@ -6,6 +6,7 @@ $(function() {
 
 		$("#profilePicker").on("change", (event) => {
 			var file = event.target.files[0];
+			// TODO: revoke?
 			var url = URL.createObjectURL(file);
 			$("#profilePreview").attr('src', url);
 		})
@@ -87,6 +88,7 @@ $(function() {
 			takeSnapshot.on('click', () => {
 					ctx.drawImage(preview[0], 0, 0, 256, 256);
 					profileCanvas[0].toBlob(blob => {
+						//TODO: revoke?
 						url = URL.createObjectURL(blob);
 						profilePreview.attr('src', url)
 					})
@@ -225,12 +227,12 @@ $(function() {
 			ss.createBlobReadStream(file).pipe(stream)
 			if (currentSID !== undefined) {
 				console.log('emit upload to ' + currentSID)
-				currentPanel.find(".privateMessage").append(fileUploaded(file.name));
+				//currentPanel.find(".privateMessage").append(fileUploaded(file.name)); FIXME: remove
 				socket.emit('privateUpload', {
 					'id' : currentSID
 				}, file.name);
 			} else {
-				$('#messages').append(fileUploaded(file.name));
+				//$('#messages').append(fileUploaded(file.name)); FIXME: remove
 				socket.emit('upload', file.name);
 			}
 		}
@@ -331,9 +333,9 @@ $(function() {
 		/*
 		* TODO: TO BE REMOVED
 		*/
-		function fileUploaded(filename) {
+		/*function fileUploaded(filename) {
 			return markedMessage('', $('<a>').text(filename + ' has been uploaded to the server').attr('href', '/'+filename).attr("target", "_blank"))
-		}
+		}*/
 
 		// getting timestamp for posted message from server
 		function callback(timestamp, messageID) {
@@ -349,8 +351,23 @@ $(function() {
 		var currentPanel;
 		var selfName;
 
+		/*
+		 * Invoked when on successfully filling out the registration formatMessage
+		 */
 		$('#registration').submit(function() {
-			socket.emit('registration', $('#regInput').val());
+			var writableStream = ss.createStream();
+			var file = $('#profilePreview').attr('src');
+			console.log('file:', file)
+			if(file.indexOf == 0) {
+				var registrationData = {};
+				registrationData.userName = $('#regInput').val();
+				registrationData.password = $('#passwd').val();
+				registrationData.profilePictureStream = writableStream;
+				ss(socket).emit('registration', $('#regInput').val());
+				ss.createBlobReadStream(file).pipe(stream)
+			} else {
+				$("#errorMessage").text('please provide a profile picture.')
+			}
 			return false;
 		});
 
@@ -498,8 +515,8 @@ $(function() {
 		socket.on('registrationStatus', (obj) => handleRegistrationStatus(obj));
 		socket.on('chat message', (messageObj) => handleChatMessage(messageObj));
 		socket.on('clientPrivateMessage', (messageObj) => handleClientPrivateMessage(messageObj));
-		socket.on('clientPrivateUpload', (messageObj) => handleClientPrivateUpload(messageObj))
-		socket.on('clientUpload', (messageObj) => handleClientUpload(messageObj))
+		/*socket.on('clientPrivateUpload', (messageObj) => handleClientPrivateUpload(messageObj))
+		socket.on('clientUpload', (messageObj) => handleClientUpload(messageObj))*/
 		socket.on('newuser', (userinfo) => handleNewuser(userinfo));
 		socket.on('userisgone', (username) => handleUserisgone(username))
 		ss(socket).on('serverPushMediaFile', (stream, data) => handleMediaFile(stream,data))
