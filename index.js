@@ -5,6 +5,7 @@
 */
 
 var fs = require("fs");
+var sha256 = require('sha256');
 const express = require('express')
 const app = express();
 const http = require('http').Server(app);
@@ -12,9 +13,11 @@ const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 var request = require('request')
 const logger = require('./log.js')
+var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
 
 logger.debugLevel = 'info';
 logger.log('info', 'logger test');
+
 
 /*require the ibm_db module*/
 var ibmdb = require('ibm_db');
@@ -45,6 +48,7 @@ let port = process.env.PORT || 3000;
  */
 var users = {};
 var databaseConnection;
+callConnectionToDatabase();
 
 
 /**
@@ -234,29 +238,20 @@ var re = /^\w[ \w]*(?<=\w)$/
  *  @param {JSON} userInfo
  *  @param {Object} socket
  */
-function handleRegistration(name, userInfo, socket) {
+async function handleRegistration(registrationData, userInfo, socket) {
 	var answer = {};
+	var name = registrationData.userName;
+	var passwordHash = sha256(registrationData.password);
 	logger.log('info', name + " tried to register")
-	logger.log('info', users)
+	//logger.log('info', users)
 	if(re.test(name)) {
 
 		/*
 		 * TODO: Name Global needs to be forbidden, too
 		 */
-		var queryResult = {};
-		doesUserExist(name,function(err,result, moreresults){
-			if(err){
-                logger.log('error', "doesUserExist()",err);
-			}else{
-				queryResult.name = result;
-				logger.log('info', "does user exist",result);
-				logger.log('info', result[0]);
-				logger.log('info', 'more results: ')
-				logger.log('info', moreresults);
-			}
-		});
-		logger.log('info', queryResult.name);
-		if (!queryResult.name) {
+		var queryResult = await doesUserExist(name);
+		//checking if user exists and if it is right user
+		if (!queryResult) {
 			logger.log('info', name + ' is registered');
 			var pair = {};
 			users[name] = pair;
@@ -269,19 +264,15 @@ function handleRegistration(name, userInfo, socket) {
 			var newUser = {};
 			newUser.socketid = socket.id;
 			newUser.name = name;
-			addUserToDB(name,function(err,result){
-				if(err){
-					logger.log('info', "adding user error",err);
-				}else{
-					logger.log('info', "user added",result);
-				}
-			});
+			var additionResult = addUserToDB(name,passwordHash);
+			logger.log("info", "result of adding user:",additionResult);
 			socket.broadcast.emit('newuser',newUser);
 		} else {
 			logger.log('info', 'user name: ' + name + ' already exists');
 			answer.success = false;
 			answer.msg = name + " already exists";
 		}
+		
     } else {
 		logger.log('info', 'user name: '+ name + ' doesn\'t match pattern');
 		answer.success = false;
@@ -315,7 +306,7 @@ io.on('connection', function(socket) {
 			hasRegistrated: null
 	}
 	//See SOCKET.IO CALLBACK FUNCTIONS Comment
-	socket.on("registration", (name) => handleRegistration(name, userInfo, socket));
+	socket.on("registration", (registrationData) => handleRegistration(registrationData, userInfo, socket));
 	socket.on('chat message', (msg) => handleChatMessage(msg));
 	socket.on('disconnect', () => handleDisconnect(userInfo.hasRegistrated, userInfo.userOnline, socket));
 	socket.on('broadcast', (data, callback,messageID) => handleBroadcast(data, callback,messageID, userInfo.userOnline, socket));
@@ -327,49 +318,69 @@ io.on('connection', function(socket) {
 });
 
 function connectToDB(){
-	logger.log('info', "Test program to access DB2 sample database");
+	return new Promise(function (resolve, reject) {
+		logger.log('info', "Accessing the ibm database");
 
-	/*Connect to the database server
-	  param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
-	  param 2: The Callback function to execute when connection attempt to the specified database is completed
-	*/
-	var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
-	var credentialsParsed = JSON.parse(credentialsUnparsed);
-	ibmdb.open("DRIVER={DB2};DATABASE="+credentialsParsed.db+";UID="+credentialsParsed.username+";PWD="+credentialsParsed.password+";HOSTNAME="+credentialsParsed.hostname+";port="+credentialsParsed.port, function(err, conn)
-	{
-			if(err) {
-			/*
-			  On error in connection, log the error message on console 
-			*/
-				  console.error("error: ", err.message);
-			} else {
-				logger.log('info', "testing bro");
-	
-			/*
-				On successful connection issue 
-				param 1: The SQL query to be issued
-				param 2: The callback function to execute when the database server responds
-			*/
-			databaseConnection = conn;
-			
-				// conn.close(function(){
-				// 	logger.log('info', "Connection Closed");
-				// });
-		}
+		/*Connect to the database server
+		param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
+		param 2: The Callback function to execute when connection attempt to the specified database is completed
+		*/
+		var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
+		var credentialsParsed = JSON.parse(credentialsUnparsed);
+		ibmdb.open("DRIVER={DB2};DATABASE="+credentialsParsed.db+";UID="+credentialsParsed.username+";PWD="+credentialsParsed.password+";HOSTNAME="+credentialsParsed.hostname+";port="+credentialsParsed.port, function(err, conn)
+		{
+				if(err) {
+					/*
+					On error in connection, log the error message on console 
+					*/
+					console.error("error: ", err.message);
+					reject(err);
+				} else {
+					logger.log('info', `Database connection is made`,conn);
+					resolve(conn);
+					// conn.close(function(){
+					// 	logger.log('info', "Connection Closed");
+					// });
+			}
+		});
+	});	
+}
+ 
+async function callConnectionToDatabase(){
+	databaseConnection = await connectToDB();
+}
+
+function doesUserExist(userName){
+	return new Promise(function (resolve, reject) {
+		databaseConnection.query(`select userid from Users where USERID='${userName}'`, function(err,result, moreresults){
+			logger.log("info", "callback of search user");
+			if(err){
+				logger.log('error', err);
+				reject(err);
+			}else{
+				logger.log('info', `does user exist ${result[0]}`);
+				logger.log('info', `more results: ${moreresults}`);
+				resolve(result[0]);
+			}
+		});
 	});
 	
 }
 
-function doesUserExist(userName,callback){
-	databaseConnection.query(`select userid from Users where userid='${userName}'`, callback);
+function addUserToDB(userName,passwordHash){
+	return new Promise(function (resolve, reject) {
+		databaseConnection.query(`insert into Users values('${userName}','${passwordHash}');`,function(err,result){
+			logger.log("info", "callback of add user");
+			if(err){
+				logger.log('error', err);
+				reject(err);
+			}else{
+				logger.log('info', `adding user: ${userName}`);
+				resolve(result);
+			}
+		});
+	});
 }
-
-function addUserToDB(userName, callback){
-
-	databaseConnection.query(`insert into Users values('${userName}','');`,callback);
-}
-connectToDB();
-
 
 // Starting the server on specific port
 http.listen(port, function() {
