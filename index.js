@@ -348,38 +348,6 @@ function connectToDB(){
 	return new Promise(function (resolve, reject) {
 		logger.log('info', "Accessing the ibm database");
 
-<<<<<<< HEAD
-	/*Connect to the database server
-	  param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber
-	  param 2: The Callback function to execute when connection attempt to the specified database is completed
-	*/
-	var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
-	var credentialsParsed = JSON.parse(credentialsUnparsed);
-  //TODO: uses HTTPS?
-	ibmdb.open("DRIVER={DB2};DATABASE="+credentialsParsed.db+";UID="+credentialsParsed.username+";PWD="+credentialsParsed.password+";HOSTNAME="+credentialsParsed.hostname+";port="+credentialsParsed.port, function(err, conn)
-	{
-			if(err) {
-			/*
-			  On error in connection, log the error message on console
-			*/
-				  console.error("error: ", err.message);
-			} else {
-				logger.log('info', "testing bro");
-
-			/*
-				On successful connection issue
-				param 1: The SQL query to be issued
-				param 2: The callback function to execute when the database server responds
-			*/
-			databaseConnection = conn;
-
-				// conn.close(function(){
-				// 	logger.log('info', "Connection Closed");
-				// });
-		}
-	});
-
-=======
 		/*Connect to the database server
 		param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
 		param 2: The Callback function to execute when connection attempt to the specified database is completed
@@ -403,7 +371,6 @@ function connectToDB(){
 			}
 		});
 	});	
->>>>>>> ea3df35052feea55d27c2298215a320a564251e2
 }
 
 /**
