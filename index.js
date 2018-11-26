@@ -133,10 +133,11 @@ logger.log('info', 'analyzed mood...')
 function handleDisconnect(hasRegistrated, userOnline, socket) {
 	if (hasRegistrated) {
 		socket.broadcast.emit("userisgone",userOnline);
-		delete users[userOnline];
-		logger.log('info', userOnline + 'has been deleted');
+		// users can now register and then login
+		// delete users[userOnline];
+		//logger.log('info', userOnline + 'has been deleted');
 	}
-	logger.log('info', 'user disconnected');
+	logger.log('info', `${userOnline} disconnected`);
 }
 
 /**
@@ -245,50 +246,74 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 	var answer = {};
 	var name = registrationData.userName;
 	var passwordHash = sha256(registrationData.password);
-	
+
+	// for testing
 	// var test =fs.createWriteStream('./icons/test.png');
 	// imageStream.pipe(test);
 	var userIsAHuman = await couldThisBeHuman(imageStream);
 	logger.log("warn",userIsAHuman);
 	
-	  
+	
 	logger.log('info', name + " tried to register")
 	//logger.log('info', users)
-	if(re.test(name)) {
 
-		/*
-		 * TODO: Name Global needs to be forbidden, too
-		 */
-		var queryResult = await doesUserExist(name);
-		//checking if user exists and if it is right user
-		if (!queryResult) {
-			logger.log('info', name + ' is registered');
-			var pair = {};
-			users[name] = pair;
-			pair.connection = socket.id;
-			userInfo.userOnline = name;
-			answer.users = users;
-			userInfo.hasRegistrated = true;
-			answer.success = true;
-			answer.selfName = name;
-			var newUser = {};
-			newUser.socketid = socket.id;
-			newUser.name = name;
-			var additionResult = addUserToDB(name,passwordHash);
-			logger.log("info", "result of adding user:",additionResult);
-			socket.broadcast.emit('newuser',newUser);
+	if(userIsAHuman.faces.length >=1){
+
+		if(re.test(name)) {
+
+			/*
+			* TODO: Name Global needs to be forbidden, too
+			*/
+			var queryResult = await doesUserExist(name);
+			//checking if user exists and if it is right user
+			if (!queryResult) {
+				logger.log('info', name + ' is registered');
+				var additionResult = addUserToDB(name,passwordHash);
+				logger.log("info", "result of adding user:",additionResult);
+				informUsers(name,answer,userInfo,socket);
+				answer.msg = `Welcome ${name}`;
+			} else {
+				logger.log('info', 'user name: ' + name + ' already exists');
+				answer.success = false;
+				answer.msg = name + " already exists";
+			}
+			
 		} else {
-			logger.log('info', 'user name: ' + name + ' already exists');
+			logger.log('info', 'user name: '+ name + ' doesn\'t match pattern');
 			answer.success = false;
-			answer.msg = name + " already exists";
+			answer.msg = name + " doesnt't match the pattern: at least one character, and may not end or start with whitspace";
 		}
-		
-    } else {
-		logger.log('info', 'user name: '+ name + ' doesn\'t match pattern');
+	}else{
+		logger.log('warn', `user with name ${name} is not a human`);
 		answer.success = false;
-		answer.msg = name + " doesnt't match the pattern: at least one character, and may not end or start with whitspace";
+		answer.msg = name + "isn't a human, please listen to your owner.";
 	}
 	socket.emit('registrationStatus', answer);
+}
+
+/**
+ * Handles the login of a user, if he is already registered and knows his password. 
+ * A broadcast is send then to all users that he is online.
+ * @param {*} loginData 
+ * @param {*} userInfo 
+ * @param {*} socket 
+ */
+async function handleLogin(loginData, userInfo, socket){
+	var answer ={};
+	var name = registrationData.userName;
+	var passwordHash = sha256(registrationData.password);
+	var queryResult = await doUserCredentialsFit(name,passwordHash);
+	if(queryResult){
+		logger.log('info',`user ${queryResult.USERID} knows his password`);
+		informUsers(queryResult.USERID,answer,userInfo,socket);
+		answer.msg = `Welcome back, ${queryResult.USERID}`;
+	}else{
+		logger.log('info',"either user name or password doesn't match");
+		answer.success = false;
+		answer.msg = "Either user name or password doesn't match!";
+	}
+
+	socket.emit('loginStatus',answer);
 }
 
 app.get('/', function(req, res) {
@@ -317,6 +342,7 @@ io.on('connection', function(socket) {
 	}
 	//See SOCKET.IO CALLBACK FUNCTIONS Comment
 	ss(socket).on("registration", (imageStream,registrationData) => handleRegistration(imageStream,registrationData, userInfo, socket));
+	socket.on('login', (loginData) => handleLogin(loginData,userInfo,socket));
 	socket.on('chat message', (msg) => handleChatMessage(msg));
 	socket.on('disconnect', () => handleDisconnect(userInfo.hasRegistrated, userInfo.userOnline, socket));
 	socket.on('broadcast', (data, callback,messageID) => handleBroadcast(data, callback,messageID, userInfo.userOnline, socket));
@@ -407,6 +433,25 @@ function addUserToDB(userName,passwordHash){
 	});
 }
 /**
+ * Checks database for a specific user with corresponding password.
+ * @param {*} userName 
+ * @param {*} passwordHash 
+ */
+function doUserCredentialsFit(userName,passwordHash){
+	return new Promise(function (resolve, reject) {
+		databaseConnection.query(`select userid, passwd from Users where userid = '${userName}' and passwd = '${passwordHash}';`,function(err,result,moreresults){
+			logger.log("info", "callback of searching for a user with specific password");
+			if(err){
+				logger.log('error', err);
+				reject(err);
+			}else{
+				logger.log('info', `${userName} with corresponding password exists.`);
+				resolve(result[0]);
+			}
+		});
+	});	
+}
+/**
  * Uses visual recognition service to detect if a image is truely matches a human face
  * @param {*} imageStream 
  */
@@ -417,24 +462,48 @@ function couldThisBeHuman(imageStream){
 			iam_apikey: 'npDYkj5gmFajccbJR8CQ1C2MGLPRpgjZdxsE9vkJoK8Z'
 		});
 
-		var test = new stream.PassThrough();
-
+		
 		var params = {
-			images_file : test
+			images_file: imageStream
 		};
 		
 		visualRecognition.detectFaces(params, function(err, response) {
 			logger.log("info","testing");
 			if (err) { 
-			logger.log(err);
+			logger.log('warn',err);
 			reject(err);
 			} else {
 			logger.log(JSON.stringify(response, null, 2))
 		    resolve(response);
 			}
 		});
-		imageStream.pipe(test);
+
+	}).then((state)=>{
+		logger.log('info',state);
+	}).catch((err)=> {
+	    logger.log('warn',err);
 	});
+}
+/**
+ * Sends a broadcast with user info to all online users to inform them that @name is online 
+ * @param {String} name 
+ * @param {JSON} answer 
+ * @param {JSON} userInfo 
+ * @param {OBJECT} socket 
+ */
+function informUsers(name, answer,userInfo,socket){
+	var pair = {};
+	users[name] = pair;
+	pair.connection = socket.id;
+	userInfo.userOnline = name;
+	answer.users = users;
+	userInfo.hasRegistrated = true;
+	answer.success = true;
+	answer.selfName = name;
+	var newUser = {};
+	newUser.socketid = socket.id;
+	newUser.name = name;
+	socket.broadcast.emit('newuser',newUser);
 }
 
 // Starting the server on specific port
