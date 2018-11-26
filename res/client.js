@@ -358,7 +358,7 @@ $(function() {
 		 */
 		$('#registration').submit(function() {
 			var writableStream = ss.createStream();
-			var file = $('#profilePreview').attr('src');
+			var file = blobStore;
 			console.log('file:', file)
 			if(file.indexOf('blob:') == 0) {
 				var registrationData = {};
