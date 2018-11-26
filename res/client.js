@@ -360,7 +360,7 @@ $(function() {
 			var writableStream = ss.createStream();
 			var file = blobStore;
 			console.log('file:', file)
-			if(file.indexOf('blob:') == 0) {
+			if(file instanceof Blob) {
 				var registrationData = {};
 				registrationData.userName = $('#regInput').val();
 				registrationData.password = $('#passwd').val();
