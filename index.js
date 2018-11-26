@@ -8,6 +8,7 @@
  * requiring modules
  */
 var fs = require("fs");
+var stream = require('stream');
 var sha256 = require('sha256');
 var request = require('request')
 var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
@@ -19,7 +20,7 @@ const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
-logger.debugLevel = 'info';
+logger.debugLevel = 'warn';
 logger.log('info', 'logger test');
 
 
@@ -240,30 +241,16 @@ var re = /^\w[ \w]*(?<=\w)$/
  *  @param {JSON} userInfo
  *  @param {Object} socket
  */
-async function handleRegistration(registrationData, userInfo, socket) {
+async function handleRegistration(imageStream,registrationData, userInfo, socket) {
 	var answer = {};
 	var name = registrationData.userName;
 	var passwordHash = sha256(registrationData.password);
-	var profilePictureStream = registrationData.profilePictureStream;
-
-	var visualRecognition = new VisualRecognitionV3({
-		version: '2018-03-19',
-		iam_apikey: 'npDYkj5gmFajccbJR8CQ1C2MGLPRpgjZdxsE9vkJoK8Z'
-	});
-
-	var params = {
-		image_files : profilePictureStream
-	};
 	
-	var visualRecognitionReponse;
-	visualRecognition.detectFaces(params, function(err, response) {
-		if (err) { 
-		  logger.log(err);
-		} else {
-		  logger.log(JSON.stringify(response, null, 2))
-		  visualRecognitionReponse = response;
-		}
-	  });
+	// var test =fs.createWriteStream('./icons/test.png');
+	// imageStream.pipe(test);
+	var userIsAHuman = await couldThisBeHuman(imageStream);
+	logger.log("warn",userIsAHuman);
+	
 	  
 	logger.log('info', name + " tried to register")
 	//logger.log('info', users)
@@ -329,7 +316,7 @@ io.on('connection', function(socket) {
 			hasRegistrated: null
 	}
 	//See SOCKET.IO CALLBACK FUNCTIONS Comment
-	ss(socket).on("registration", (registrationData) => handleRegistration(registrationData, userInfo, socket));
+	ss(socket).on("registration", (imageStream,registrationData) => handleRegistration(imageStream,registrationData, userInfo, socket));
 	socket.on('chat message', (msg) => handleChatMessage(msg));
 	socket.on('disconnect', () => handleDisconnect(userInfo.hasRegistrated, userInfo.userOnline, socket));
 	socket.on('broadcast', (data, callback,messageID) => handleBroadcast(data, callback,messageID, userInfo.userOnline, socket));
@@ -417,6 +404,36 @@ function addUserToDB(userName,passwordHash){
 				resolve(result);
 			}
 		});
+	});
+}
+/**
+ * Uses visual recognition service to detect if a image is truely matches a human face
+ * @param {*} imageStream 
+ */
+function couldThisBeHuman(imageStream){
+	return new Promise(function (resolve, reject) {
+		var visualRecognition = new VisualRecognitionV3({
+			version: '2018-03-19',
+			iam_apikey: 'npDYkj5gmFajccbJR8CQ1C2MGLPRpgjZdxsE9vkJoK8Z'
+		});
+
+		var test = new stream.PassThrough();
+
+		var params = {
+			images_file : test
+		};
+		
+		visualRecognition.detectFaces(params, function(err, response) {
+			logger.log("info","testing");
+			if (err) { 
+			logger.log(err);
+			reject(err);
+			} else {
+			logger.log(JSON.stringify(response, null, 2))
+		    resolve(response);
+			}
+		});
+		imageStream.pipe(test);
 	});
 }
 
