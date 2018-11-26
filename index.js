@@ -256,8 +256,8 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 
 	logger.log('info', name + " tried to register")
 	//logger.log('info', users)
-  logger.log('info', 'face recognition: ', userIsAHuman.images.faces)
-	if(userIsAHuman.images.faces){
+    logger.log('info', `face recognition: ${userIsAHuman.images[0].faces}`);
+	if(userIsAHuman.images[0].faces.length >= 1){
 
 		if(re.test(name)) {
 
@@ -496,7 +496,7 @@ function doUserCredentialsFit(userName,passwordHash){
              reject(err);
              } else {
                console.log('no error')
-             logger.log('info', JSON.stringify(response, null, 2))
+               logger.log('info', JSON.stringify(response, null, 2))
                resolve(response);
              }
            });
