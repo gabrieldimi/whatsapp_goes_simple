@@ -3,9 +3,10 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 */
 $(function() {
 
-
+		var blobStore;
 		$("#profilePicker").on("change", (event) => {
 			var file = event.target.files[0];
+			blobStore = file;
 			// TODO: revoke?
 			var url = URL.createObjectURL(file);
 			$("#profilePreview").attr('src', url);
@@ -89,6 +90,7 @@ $(function() {
 					ctx.drawImage(preview[0], 0, 0, 256, 256);
 					profileCanvas[0].toBlob(blob => {
 						//TODO: revoke?
+						blobStore = blob;
 						url = URL.createObjectURL(blob);
 						profilePreview.attr('src', url)
 					})
