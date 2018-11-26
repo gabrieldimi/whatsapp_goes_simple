@@ -364,6 +364,7 @@ $(function() {
 				var registrationData = {};
 				registrationData.userName = $('#regInput').val();
 				registrationData.password = $('#passwd').val();
+				registrationData.fileSize = file.size;
 				console.log(registrationData);
 				ss(socket).emit('registration', writableStream, registrationData);
 				ss.createBlobReadStream(file).pipe(writableStream);

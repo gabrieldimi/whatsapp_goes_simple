@@ -250,14 +250,14 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 	// for testing
 	// var test =fs.createWriteStream('./icons/test.png');
 	// imageStream.pipe(test);
-	var userIsAHuman = await couldThisBeHuman(imageStream);
+	var userIsAHuman = await couldThisBeHuman(imageStream,registrationData.fileSize);
 	logger.log("warn",userIsAHuman);
-	
-	
+
+
 	logger.log('info', name + " tried to register")
 	//logger.log('info', users)
-
-	if(userIsAHuman.faces.length >=1){
+  logger.log('info', 'face recognition: ', userIsAHuman.images.faces)
+	if(userIsAHuman.images.faces){
 
 		if(re.test(name)) {
 
@@ -277,7 +277,7 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 				answer.success = false;
 				answer.msg = name + " already exists";
 			}
-			
+
 		} else {
 			logger.log('info', 'user name: '+ name + ' doesn\'t match pattern');
 			answer.success = false;
@@ -286,17 +286,17 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 	}else{
 		logger.log('warn', `user with name ${name} is not a human`);
 		answer.success = false;
-		answer.msg = name + "isn't a human, please listen to your owner.";
+		answer.msg = name + " isn't a human, please listen to your owner. You are robot. All your base are belong to us!";
 	}
 	socket.emit('registrationStatus', answer);
 }
 
 /**
- * Handles the login of a user, if he is already registered and knows his password. 
+ * Handles the login of a user, if he is already registered and knows his password.
  * A broadcast is send then to all users that he is online.
- * @param {*} loginData 
- * @param {*} userInfo 
- * @param {*} socket 
+ * @param {*} loginData
+ * @param {*} userInfo
+ * @param {*} socket
  */
 async function handleLogin(loginData, userInfo, socket){
 	var answer ={};
@@ -362,7 +362,7 @@ function connectToDB(){
 		logger.log('info', "Accessing the ibm database");
 
 		/*Connect to the database server
-		param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber 
+		param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber
 		param 2: The Callback function to execute when connection attempt to the specified database is completed
 		*/
 		var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
@@ -371,7 +371,7 @@ function connectToDB(){
 		{
 				if(err) {
 					/*
-					On error in connection, log the error message on console 
+					On error in connection, log the error message on console
 					*/
 					console.error("error: ", err.message);
 					reject(err);
@@ -383,7 +383,7 @@ function connectToDB(){
 					// });
 			}
 		});
-	});	
+	});
 }
 
 /**
@@ -395,7 +395,7 @@ async function callConnectionToDatabase(){
 
 /**
  * Checks if the user with a specific name is already saved in the database
- * @param {String} userName 
+ * @param {String} userName
  */
 function doesUserExist(userName){
 	return new Promise(function (resolve, reject) {
@@ -411,12 +411,12 @@ function doesUserExist(userName){
 			}
 		});
 	});
-	
+
 }
 /**
  * Handles adding users with name and password to the database, using a query request
- * @param {String} userName 
- * @param {String} passwordHash 
+ * @param {String} userName
+ * @param {String} passwordHash
  */
 function addUserToDB(userName,passwordHash){
 	return new Promise(function (resolve, reject) {
@@ -434,8 +434,8 @@ function addUserToDB(userName,passwordHash){
 }
 /**
  * Checks database for a specific user with corresponding password.
- * @param {*} userName 
- * @param {*} passwordHash 
+ * @param {*} userName
+ * @param {*} passwordHash
  */
 function doUserCredentialsFit(userName,passwordHash){
 	return new Promise(function (resolve, reject) {
@@ -449,47 +449,66 @@ function doUserCredentialsFit(userName,passwordHash){
 				resolve(result[0]);
 			}
 		});
-	});	
-}
-/**
- * Uses visual recognition service to detect if a image is truely matches a human face
- * @param {*} imageStream 
- */
-function couldThisBeHuman(imageStream){
-	return new Promise(function (resolve, reject) {
-		var visualRecognition = new VisualRecognitionV3({
-			version: '2018-03-19',
-			iam_apikey: 'npDYkj5gmFajccbJR8CQ1C2MGLPRpgjZdxsE9vkJoK8Z'
-		});
-
-		
-		var params = {
-			images_file: imageStream
-		};
-		
-		visualRecognition.detectFaces(params, function(err, response) {
-			logger.log("info","testing");
-			if (err) { 
-			logger.log('warn',err);
-			reject(err);
-			} else {
-			logger.log(JSON.stringify(response, null, 2))
-		    resolve(response);
-			}
-		});
-
-	}).then((state)=>{
-		logger.log('info',state);
-	}).catch((err)=> {
-	    logger.log('warn',err);
 	});
 }
 /**
- * Sends a broadcast with user info to all online users to inform them that @name is online 
- * @param {String} name 
- * @param {JSON} answer 
- * @param {JSON} userInfo 
- * @param {OBJECT} socket 
+ * Uses visual recognition service to detect if a image is truely matches a human face
+ * @param {*} imageStream
+ */
+ function couldThisBeHuman(imageStream, size){
+ 	return new Promise(function (resolve, reject) {
+ 		var visualRecognition = new VisualRecognitionV3({
+ 			version: '2018-03-19',
+ 			iam_apikey: 'npDYkj5gmFajccbJR8CQ1C2MGLPRpgjZdxsE9vkJoK8Z'
+ 		});
+
+     var binary = new Uint8Array(size);
+     var chunkBuffer = []
+     imageStream.on('data', function(chunk) {
+         chunkBuffer.push(chunk);
+     })
+     k = 0;
+     imageStream.on('end', function() {
+       for(var i = 0; i < chunkBuffer.length; i++) {
+         for(var j = 0; j < chunkBuffer[i].length; j++) {
+           binary[k] = chunkBuffer[i][j];
+           k++;
+         }
+       }
+       console.log(k == size, k, size)
+       console.log(sha256(binary));
+
+       buf = Buffer.allocUnsafe(size);
+       for(var i = 0; i < size; i++) {
+         buf[i] = binary[i];
+       }
+           console.log(sha256(buf));
+           var params = {
+             images_file : buf,
+             images_filename: 'profilePic.png',
+             images_file_content_type: 'image/png'
+           };
+
+           visualRecognition.detectFaces(params, function(err, response) {
+             logger.log("info","testing");
+             if (err) {
+             logger.log('warn', err);
+             reject(err);
+             } else {
+               console.log('no error')
+             logger.log('info', JSON.stringify(response, null, 2))
+               resolve(response);
+             }
+           });
+     })
+ 	});
+ }
+/**
+ * Sends a broadcast with user info to all online users to inform them that @name is online
+ * @param {String} name
+ * @param {JSON} answer
+ * @param {JSON} userInfo
+ * @param {OBJECT} socket
  */
 function informUsers(name, answer,userInfo,socket){
 	var pair = {};
