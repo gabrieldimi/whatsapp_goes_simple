@@ -20,7 +20,7 @@ const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
-logger.debugLevel = 'warn';
+logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 
 
@@ -438,7 +438,9 @@ function doesUserExist(userName){
 				resolve(result[0]);
 			}
 		});
-	});
+	}).catch((error) => {
+    logger.log('error', error);
+  });
 
 }
 /**
@@ -458,7 +460,9 @@ function addUserToDB(userName,passwordHash){
 				resolve(result);
 			}
 		});
-	});
+	}).catch((error) => {
+    logger.log('error', error);
+  });
 }
 /**
  * Checks database for a specific user with corresponding password.
