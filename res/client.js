@@ -233,10 +233,10 @@ $(function() {
 
 
 			ss(socket).emit('sendingbinary', stream, {
-	            data : file,
-	            size : file.size,
+	      size : file.size,
 				name : file.name,
-				type: file.type});
+				type: file.type
+			});
 			ss.createBlobReadStream(file).pipe(stream)
 			if (currentSID !== undefined) {
 				console.log('emit upload to ' + currentSID)
