@@ -337,6 +337,17 @@ app.get('/weblogger', function(req,res) {
 var socketWeblogger = io.of('/weblogger');
 socketWeblogger.on('connection',function(socket) {
 	logger.log('info', 'weblogger listening')
+  socket.on('cpu', () => {
+    socketWeblogger.to(socket.id).emit('cpu_answer', process.cpuUsage());
+  })
+
+  socket.on('memory', () => {
+    socketWeblogger.to(socket.id).emit('memory_answer', process.memoryUsage());
+  })
+
+  socket.on('uptime', () => {
+    socketWeblogger.to(socket.id).emit('uptime_answer', process.uptime());
+  })
 });
 logger.socket = socketWeblogger;
 
@@ -547,3 +558,10 @@ function informUsers(name, answer,userInfo,socket){
 http.listen(port, function() {
 	logger.log('info', 'listening on *:' + port);
 });
+
+;['SIGTERM', 'SIGINT'].forEach(eventName => {
+  process.on(eventName, () => {
+    logger.log('info', `${eventName} signal received.`);
+    process.exit(0);
+  });
+})

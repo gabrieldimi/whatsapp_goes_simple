@@ -3,8 +3,26 @@
 <head>
 <title>Weblogger</title>
 <style>
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+}
+
+#buttonPanel {
+  height: 5%;
+}
+
+#logContainer {
+  height: 95%;
+  overflow-y: auto;
+}
+
 .warn {
-  color: yellow;
+  background: #ffc107
 }
 
 .error {
@@ -27,12 +45,39 @@
             loglist.appendChild(li);
             document.documentElement.scrollTop = document.documentElement.scrollHeight
         })
+        ;['cpu_answer', 'memory_answer', 'uptime_answer'].forEach(eventName => {
+          socket.on(eventName, (data) => {
+            var li = document.createElement('li')
+            if(typeof data === "string") {
+              li.textContent = data
+            } else {
+              li.textContent = JSON.stringify(data);
+            }
+            loglist.appendChild(li);
+            document.documentElement.scrollTop = document.documentElement.scrollHeight
+          })
+        })
+
+        btnCPU = document.getElementById('getCPU');
+        btnMemory = document.getElementById('getMemory')
+        btnUptime = document.getElementById('getUptime')
+
+        btnCPU.addEventListener('click', () => socket.emit('cpu'));
+        btnMemory.addEventListener('click', () => socket.emit('memory'));
+        btnUptime.addEventListener('click', () => socket.emit('uptime'));
     })
 </script>
 </head>
 <body>
-    <ul id="loglist">
+    <div id='buttonPanel'>
+    <button id='getCPU'>Get CPU</button>
+    <button id='getMemory'>Get memoryUsage</button>
+    <button id='getUptime'>Get uptime</button>
+    </div>
+    <div id='logContainer'>
+      <ul id="loglist">
 
-    </ul>
+      </ul>
+    </div>
 </body>
 </html>
