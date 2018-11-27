@@ -259,6 +259,7 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
                   The password must be at least 8 characters long`;
     socket.emit('registrationStatus', answer);
     logger.log('warn', 'Server pattern checking: password did not match pattern')
+    return;
   }
 	var userIsAHuman = await couldThisBeHuman(imageStream,registrationData.fileSize);
 	logger.log("warn",userIsAHuman);
@@ -271,9 +272,6 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 
 		if(re.test(name)) {
 
-			/*
-			* TODO: Name Global needs to be forbidden, too
-			*/
 			var queryResult = await doesUserExist(name);
 			//checking if user exists and if it is right user
 			if (!queryResult) {
@@ -384,7 +382,7 @@ function connectToDB(){
       connstring = `DRIVER={DB2};DATABASE=${credentialsParsed.db};UID=${credentialsParsed.username};PWD=${credentialsParsed.password};HOSTNAME=${credentialsParsed.hostname};PORT=${credentialsParsed.port}`
     } else {
       //making sure there is a secure connection to the databse when running on remote server
-      connstring = `DRIVER={DB2};DATABASE=${credentialsParsed.db};UID=${credentialsParsed.username};PWD=${credentialsParsed.password};HOSTNAME=${credentialsParsed.hostname};PORT=${credentialsParsed.port};Security=SSL`
+      connstring = credentialsParsed.ssldsn;
     }
     ibmdb.open(connstring, function(err, conn)
 		{
