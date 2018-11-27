@@ -190,7 +190,10 @@ function handleSendingBinary(incomingStream, data,socket) {
 	      {
 	        var socketTo = io.sockets.connected[i];
 	        logger.log('info', 'server pushing to ' + socketTo.id);
-	        var outgoingStream = ss.createStream();
+	        var outgoingStream = ss.createStream({
+            objectMode: true,
+            highWaterMark: 16384
+          });
 	        ss(socketTo).emit('serverPushMediaFile', outgoingStream, data);
 	        incomingStream.pipe(outgoingStream);
 	      }

@@ -166,19 +166,17 @@ $(function() {
 		 * Invoked whenever there is media files to be received
 		 */
 		function handleMediaFile(stream, data) {
-
 			fileBuffer = [],
-		    fileLength = 0;
+		  fileLength = 0;
 			console.log('HANDLE MEDIA FILES TRIGGERED');
 			console.log(data);
 			stream.on('data', function (chunk) {
 				fileLength += chunk.length;
 				console.log('fileLength: ' + fileLength)
-                // var progress = Math.floor((fileLength / fileInfo.size) *
-				// 100);
-                // progress = Math.max(progress - 2, 1);
-                fileBuffer.push(chunk);
-            });
+		    // var progress = Math.floor((fileLength / fileInfo.size) * 100);
+		    // progress = Math.max(progress - 2, 1);
+		    fileBuffer.push(chunk);
+      });
 
 			 stream.on('end', function () {
 					if(fileLength != data.size) {
@@ -229,8 +227,10 @@ $(function() {
 
 		function handleFiles(file) {
 			console.log(file)
-			var stream = ss.createStream();
-
+			var stream = ss.createStream({
+				objectMode: true,
+				highWaterMark: 16384
+			});
 
 			ss(socket).emit('sendingbinary', stream, {
 	      size : file.size,
