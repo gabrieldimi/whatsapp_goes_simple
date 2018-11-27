@@ -133,9 +133,9 @@ logger.log('info', 'analyzed mood...')
 function handleDisconnect(hasRegistrated, userOnline, socket) {
 	if (hasRegistrated) {
 		socket.broadcast.emit("userisgone",userOnline);
-		// users can now register and then login
-		// delete users[userOnline];
-		//logger.log('info', userOnline + 'has been deleted');
+		// users can now register and then login. Now this is only used for active users
+		delete users[userOnline];
+		logger.log('info', userOnline + ' has been deleted from active users. But not from database');
 	}
 	logger.log('info', `${userOnline} disconnected`);
 }

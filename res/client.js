@@ -14,7 +14,7 @@ $(function() {
 
 		/* Making sure the user gets quick feedback whether the input was correct*/
 		function addCustomInputErrorMessages() {
-			$("#regInput").on("invalid", (event) => {
+			$("#regInput").on("input", (event) => {
 				if(event.target.validity.patternMismatch) {
 				event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores")
 			} else {
@@ -133,6 +133,35 @@ $(function() {
 			chatBody.scrollTop = chatBody.scrollHeight;
 		}
 
+		function buildMediaElem(type) {
+			var mediaElem;
+			switch(type.substring(0, type.indexOf("/"))) {
+				case "image":
+					var mediaElem = document.createElement('img');
+				break;
+				case "video":
+					var mediaElem = document.createElement('video');
+					$(mediaElem).attr('controls', '')
+					$(mediaElem).on('keydown', event => {
+						if(event.keyCode === 75) {
+							console.log(this, event.target)
+							if(event.target.paused) {
+								event.target.play();
+							} else {
+								event.target.pause();
+							}
+						}
+					})
+				break;
+				case "audio":
+					var mediaElem = document.createElement('audio');
+					$(mediaElem).attr('controls', '')
+				break;
+			}
+			$(mediaElem).addClass('mediaMessage')
+			return mediaElem;
+		}
+
 		/*
 		 * Invoked whenever there is media files to be received
 		 */
@@ -169,27 +198,9 @@ $(function() {
 	                    type : data.type
 	                }),
 					url = window.URL.createObjectURL(blob);
-					var mediaElem;
-	                console.log("URL:");
+					var mediaElem = buildMediaElem(data.type);
+	        console.log("URL:");
 					console.log(url);
-					 /*
-					 * TODO: needs own function
-					 * and implemented for private, too
-					 */
-					switch(data.type.substring(0, data.type.indexOf("/"))) {
-						case "image":
-							var mediaElem = document.createElement('img');
-						break;
-						case "video":
-							var mediaElem = document.createElement('video');
-							$(mediaElem).attr('controls', '')
-						break;
-						case "audio":
-							var mediaElem = document.createElement('audio');
-							$(mediaElem).attr('controls', '')
-						break;
-					}
-					$(mediaElem).addClass('mediaMessage')
 					mediaElem.src = url;
 					$('#messages').append(mediaElem);
 					scrollToBottom();
@@ -262,6 +273,10 @@ $(function() {
 			for(var i = 0; i < e.dataTransfer.files.length; i++) {
 				var file = e.dataTransfer.files[i];
 				console.log("LOOPING OVER FILELIST: ", file);
+				var mediaElem = buildMediaElem(file.type);
+				url = URL.createObjectURL(file);
+				mediaElem.src = url;
+				appendToActiveTab('',mediaElem); //FIXME: empty parameter
 				handleFiles(file) // TODO: move loop to receiver
 			}
 		});
@@ -299,7 +314,11 @@ $(function() {
 
 		// properly formats messages to include name, payload and timestamp
 		function formatMessage(messageObj, cssClazz) {
-			messageEntry = $('<li>').append(
+			messageEntry = $('<li>');
+			if(messageObj.mediaElem) {
+				messageEntry.append(messageObj.mediaElem);
+			}
+			messageEntry.append(
 					$('<pre>').text(
 							messageObj.userName + ':\n\n' + messageObj.payload
 									+ '\n\n' + messageObj.time + '\n'
@@ -377,7 +396,7 @@ $(function() {
 		//Triggered when Enter is pressed on the text-input or when the send button is clicked
 		$('#messageInput').submit(
 				function() {
-					console.log(callback)
+					console.log('callback: ', callback)
 					var currentMessageID = getMessageID();
 					var messageObj = {}
 					messageObj.payload = $('#m').val()
@@ -404,6 +423,25 @@ $(function() {
 					scrollToBottom();
 					return false;
 				});
+
+				/*
+				 * TODO: use as only one
+				*/
+				function appendToActiveTab(elem, mediaElem) {
+					var currentMessageID = getMessageID();
+					var messageObj = {}
+					messageObj.payload = '';
+					messageObj.userName = selfName;
+					var timestamp = getTimeStamp()
+					messageObj.date = timestamp.date;
+					messageObj.time = timestamp.time;
+					messageObj.mediaElem = mediaElem;
+					if (currentSID !== undefined) { // if not Global selected
+						currentPanel.find(".privateMessage").append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
+					} else {
+						$('#messages').append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
+					}
+				}
 
 		/* ----------------------- SOCKET.IO CALLBACK FUNCTIONS ------------------------------*/
 

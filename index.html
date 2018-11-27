@@ -49,8 +49,13 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 				<!-- REGISTRATION -->
 				<div id="container" class="container">
 					<form id="registration" action="">
-						<!--pattern in pattern atrribute is automatically anchored-->
-						<input id="regInput" class="regField" type="text" placeholder="Enter username" pattern="\w+" required>
+						<!--pattern in pattern atrribute is automatically anchored.
+								Pattern matches if a sequence of characters is entered
+								containing only lower and uppercase letters, digits,
+								underscores and whitspace. Whitspaces are not allowed
+								at the start or end of the sequence
+						-->
+						<input id="regInput" class="regField" type="text" placeholder="Enter username" pattern="(?!^.* $)\w[ \w]*" required>
 						<!-- Pattern requires the user to enter a password that contains at least
 							 one uppercase,
 							 one lowercase,

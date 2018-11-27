@@ -129,7 +129,7 @@ float:left;
 }
 
 #errorMessage {
-	/*position:absolute;*/
+	position:absolute;
 	width:100%;
 	font-size: 24pt;
 	color:#d00;
