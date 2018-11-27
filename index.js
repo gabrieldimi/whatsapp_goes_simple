@@ -21,7 +21,7 @@ const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 logger.debugLevel = 'warn';
-logger.log('info', 'logger test');
+logger.log('info', 'logger running');
 
 
 
@@ -230,8 +230,10 @@ function handleChatMessage(msg) {
 	logger.log('info', 'message: ' + msg);
 	io.emit('chat message', userOnline + ": " + msg);
 }
-
-var re = /^\w[ \w]*(?<=\w)$/
+//regular expression to make sure usernames may only contain word-characters and Whitspaces
+//and a name cannot be: 'Global'
+var re = /(?!^Global$)^\w[ \w]*(?<=\w)$/
+var rePassword = /^(?:(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*\W)).{8,}$/
 /**
  *  handling the registration of a user
  *  the user will be warned if the following rules are broken:
@@ -246,10 +248,18 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 	var answer = {};
 	var name = registrationData.userName;
 	var passwordHash = sha256(registrationData.password);
-
-	// for testing
-	// var test =fs.createWriteStream('./icons/test.png');
-	// imageStream.pipe(test);
+  //Rather check here insetead of nesting if-statements
+  if(!rePassword.test(registrationData.password)) {
+    answer.success = false;
+    answer.msg = `Password must contain at least
+                  one uppercase,
+                  one lowercase,
+                  one digit and
+                  one special character.
+                  The password must be at least 8 characters long`;
+    socket.emit('registrationStatus', answer);
+    logger.log('warn', 'Server pattern checking: password did not match pattern')
+  }
 	var userIsAHuman = await couldThisBeHuman(imageStream,registrationData.fileSize);
 	logger.log("warn",userIsAHuman);
 
@@ -367,7 +377,16 @@ function connectToDB(){
 		*/
 		var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
 		var credentialsParsed = JSON.parse(credentialsUnparsed);
-		ibmdb.open("DRIVER={DB2};DATABASE="+credentialsParsed.db+";UID="+credentialsParsed.username+";PWD="+credentialsParsed.password+";HOSTNAME="+credentialsParsed.hostname+";port="+credentialsParsed.port, function(err, conn)
+    //TODO: maybe open synchronously. API doc.: https://github.com/ibmdb/node-ibm_db/blob/master/APIDocumentation.md#user-content-openSyncApi
+    var connstring;
+    if(process.env.BLUEMIX_REGION === undefined) {
+      //DATABASE=database;HOSTNAME=hostname;PORT=port;PROTOCOL=TCPIP;UID=username;PWD=passwd;Security=SSL;SSLServerCertificate=<cert.arm_file_path>;
+      connstring = `DRIVER={DB2};DATABASE=${credentialsParsed.db};UID=${credentialsParsed.username};PWD=${credentialsParsed.password};HOSTNAME=${credentialsParsed.hostname};PORT=${credentialsParsed.port}`
+    } else {
+      //making sure there is a secure connection to the databse when running on remote server
+      connstring = `DRIVER={DB2};DATABASE=${credentialsParsed.db};UID=${credentialsParsed.username};PWD=${credentialsParsed.password};HOSTNAME=${credentialsParsed.hostname};PORT=${credentialsParsed.port};Security=SSL`
+    }
+    ibmdb.open(connstring, function(err, conn)
 		{
 				if(err) {
 					/*
@@ -485,6 +504,7 @@ function doUserCredentialsFit(userName,passwordHash){
            console.log(sha256(buf));
            var params = {
              images_file : buf,
+             //TODO: remove static values
              images_filename: 'profilePic.png',
              images_file_content_type: 'image/png'
            };

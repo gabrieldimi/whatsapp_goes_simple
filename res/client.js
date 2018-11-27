@@ -16,7 +16,7 @@ $(function() {
 		function addCustomInputErrorMessages() {
 			$("#regInput").on("input", (event) => {
 				if(event.target.validity.patternMismatch) {
-				event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores")
+				event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores. Username: 'Global' is not allowed")
 			} else {
 				//Needs to be empty to validate
 				event.target.setCustomValidity("");
