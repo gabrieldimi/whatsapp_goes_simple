@@ -10,7 +10,7 @@
         };
         console.log(level+': '+message);
         if(logger.socket) {
-          logger.socket.emit('log', level+': '+message);
+          logger.socket.emit('log', level, message);
         }
       }
     }

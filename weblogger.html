@@ -2,16 +2,30 @@
 <html>
 <head>
 <title>Weblogger</title>
+<style>
+.warn {
+  color: yellow;
+}
+
+.error {
+  color: red;
+}
+
+.info {
+  color:blue;
+}
+</style>
 <script src="/socket.io/socket.io.js"></script>
 <script>
     window.addEventListener('DOMContentLoaded', function() {
         var loglist = document.getElementById('loglist');
         var socket = io('/weblogger');
-        socket.on('log', function(msg) {
+        socket.on('log', function(level, msg) {
             var li = document.createElement('li')
-            li.textContent = msg;
+            li.textContent = level + ': ' + msg;
+            li.classList.add(level)
             loglist.appendChild(li);
-            document.documentElement.scrollTop = document.documentElement.scrollHeight 
+            document.documentElement.scrollTop = document.documentElement.scrollHeight
         })
     })
 </script>
