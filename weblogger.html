@@ -37,13 +37,14 @@ html, body {
 <script>
     window.addEventListener('DOMContentLoaded', function() {
         var loglist = document.getElementById('loglist');
+        var logContainer = document.getElementById('logContainer');
         var socket = io('/weblogger');
         socket.on('log', function(level, msg) {
             var li = document.createElement('li')
             li.textContent = level + ': ' + msg;
             li.classList.add(level)
             loglist.appendChild(li);
-            document.documentElement.scrollTop = document.documentElement.scrollHeight
+            logContainer.scrollTop = logContainer.scrollHeight
         })
         ;['cpu_answer', 'memory_answer', 'uptime_answer'].forEach(eventName => {
           socket.on(eventName, (data) => {
@@ -54,7 +55,7 @@ html, body {
               li.textContent = JSON.stringify(data);
             }
             loglist.appendChild(li);
-            document.documentElement.scrollTop = document.documentElement.scrollHeight
+            logContainer.scrollTop = logContainer.scrollHeight
           })
         })
 
