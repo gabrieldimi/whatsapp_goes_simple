@@ -51,7 +51,8 @@ let port = process.env.PORT || 3000;
  */
 var users = {};
 var databaseConnection;
-callConnectionToDatabase();
+//synchronously
+connectToDB();
 
 
 /**
@@ -377,20 +378,15 @@ io.on('connection', function(socket) {
 });
 
 /**
- * Handles connection of server to ibm database, uses a promise in order that this function runs asynchronously.
+ * Handles a synchronous connection of server to ibm database
  * Connection is opened via credentials found in DBcredentials.json
  */
 function connectToDB(){
-	return new Promise(function (resolve, reject) {
-		logger.log('info', "Accessing the ibm database");
+	logger.log('info', "Accessing the ibm database");
 
-		/*Connect to the database server
-		param 1: The DSN string which has the details of database name to connect to, user id, password, hostname, portnumber
-		param 2: The Callback function to execute when connection attempt to the specified database is completed
-		*/
-		var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
-		var credentialsParsed = JSON.parse(credentialsUnparsed);
-    //TODO: maybe open synchronously. API doc.: https://github.com/ibmdb/node-ibm_db/blob/master/APIDocumentation.md#user-content-openSyncApi
+	var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
+	var credentialsParsed = JSON.parse(credentialsUnparsed);
+
     var connstring;
     if(process.env.BLUEMIX_REGION === undefined) {
       //DATABASE=database;HOSTNAME=hostname;PORT=port;PROTOCOL=TCPIP;UID=username;PWD=passwd;Security=SSL;SSLServerCertificate=<cert.arm_file_path>;
@@ -398,32 +394,19 @@ function connectToDB(){
     } else {
       //making sure there is a secure connection to the databse when running on remote server
       connstring = credentialsParsed.ssldsn;
-    }
-    ibmdb.open(connstring, function(err, conn)
-		{
-				if(err) {
-					/*
-					On error in connection, log the error message on console
-					*/
-					console.error("error: ", err.message);
-					reject(err);
-				} else {
-					logger.log('info', `Database connection is made`,conn);
-					resolve(conn);
-					// conn.close(function(){
-					// 	logger.log('info', "Connection Closed");
-					// });
-			}
-		});
-	});
+	}
+	
+	try{
+		var option = { connectTimeout : 40, systemNaming : true };// Connection Timeout after 40 seconds.
+		databaseConnection = ibmdb.openSync(connstring,option);
+		logger.log('info', `Database connection is made`,databaseConnection);
+
+	}catch (e) {
+	    // 	On error in connection, log the error message on console
+		logger.log("error",e.message);  
+	}
 }
 
-/**
- * Is used to call a function to connect to the ibm database
- */
-async function callConnectionToDatabase(){
-	databaseConnection = await connectToDB();
-}
 
 /**
  * Checks if the user with a specific name is already saved in the database
