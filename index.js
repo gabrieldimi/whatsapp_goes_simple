@@ -178,28 +178,41 @@ async function handlePrivateMessage(data,callback,messageID, userOnline) {
 
 /**
  * Sends media files using streams in order not to save files on the server
- * the server works only as a relay, their is no fishy business going on here, sadly NSA is always watching
+ * the server works only as a relay, their is no fishy business going on here, sadly NSA is always watching.
+ * OMG it's an IIFE
  * @param {Object} incomingStream
  * @param {JSON} data
  * @param {Object} socket
  */
-function handleSendingBinary(incomingStream, data,socket) {
-	logger.log('info', data);
-	for(var i in io.sockets.connected) {
-	      // don't send the stream back to the initiator
-	      if (io.sockets.connected[i].id != socket.id)
-	      {
-	        var socketTo = io.sockets.connected[i];
-	        logger.log('info', 'server pushing to ' + socketTo.id);
-	        var outgoingStream = ss.createStream({
-            objectMode: true,
-            highWaterMark: 16384
-          });
-	        ss(socketTo).emit('serverPushMediaFile', outgoingStream, data);
-	        incomingStream.pipe(outgoingStream);
-	      }
-	    }
-}
+var handleSendingBinary = (function() {
+  //Only needed inside function, thus closure
+  function sendToSocket(incomingStream, data, idReceiver, userOnline) {
+      logger.log('info', 'server pushing to ' + idReceiver);
+      console.log(idReceiver)
+      var outgoingStream = ss.createStream({
+        objectMode: true,
+        highWaterMark: 16384
+      });
+      ss(idReceiver).emit('serverPushMediaFile', outgoingStream, data, userOnline);
+      incomingStream.pipe(outgoingStream);
+  }
+
+  return function(incomingStream, data, socket, idReceiver, userOnline) {
+    logger.log('info', data);
+    if(idReceiver) {
+      logger.log('info','private mediaTransfer to', idReceiver)
+      sendToSocket(incomingStream, data, io.sockets.connected[idReceiver], userOnline)
+    } else {
+    	for(var i in io.sockets.connected) {
+        // don't send the stream back to the initiator
+        if (io.sockets.connected[i].id != socket.id) {
+          var socketTo = io.sockets.connected[i];
+          sendToSocket(incomingStream, data, socketTo)
+        }
+      }
+    }
+  }
+}())
 
 /**
  * This function will trigger a marked message in the private room of the
@@ -252,7 +265,7 @@ var rePassword = /^(?:(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*\W)).{8,}$/
 async function handleRegistration(imageStream,registrationData, userInfo, socket) {
 	var answer = {};
 	var name = registrationData.userName;
-	
+
 	// logger.log("info",`password plain text = ${registrationData.password}`);
   //Rather check here insetead of nesting if-statements
   if(!rePassword.test(registrationData.password)) {
@@ -331,13 +344,13 @@ async function handleLogin(loginData, userInfo, socket){
 			answer.success = false;
 			answer.msg = "Either user name or password doesn't match!";
 		}
-	
+
 	}else{
 		logger.log('info',"user is already logged in");
 		answer.success = false;
 		answer.msg = "You are already logged in.";
 	}
-	
+
 	socket.emit('loginStatus',answer);
 }
 
@@ -385,7 +398,7 @@ io.on('connection', function(socket) {
 	socket.on('privatemessage', (data,callback,messageID) => handlePrivateMessage(data,callback,messageID, userInfo.userOnline));
 	socket.on('privateUpload', (data, filename) => handlePrivateUpload(data, filename))
 	socket.on('upload', (filename) => handleUpload(filename, socket, userInfo.userOnline))
-	ss(socket).on('sendingbinary', (incomingStream, data) => handleSendingBinary(incomingStream, data,socket));
+	ss(socket).on('sendingbinary', (incomingStream, data, idReceiver) => handleSendingBinary(incomingStream, data,socket, idReceiver, userInfo.userOnline));
 
 });
 
@@ -407,7 +420,7 @@ function connectToDB(){
       //making sure there is a secure connection to the databse when running on remote server
       connstring = credentialsParsed.ssldsn;
 	}
-	
+
 	try{
 		var option = { connectTimeout : 40, systemNaming : true };// Connection Timeout after 40 seconds.
 		databaseConnection = ibmdb.openSync(connstring,option);
@@ -415,7 +428,7 @@ function connectToDB(){
 
 	}catch (e) {
 	    // 	On error in connection, log the error message on console
-		logger.log("error",e.message);  
+		logger.log("error",e.message);
 	}
 }
 

@@ -172,7 +172,8 @@ $(function() {
 		/*
 		 * Invoked whenever there is media files to be received
 		 */
-		function handleMediaFile(stream, data) {
+		function handleMediaFile(stream, data, idSender) {
+			console.log('handleMediaFile() ', idSender);
 			fileBuffer = [],
 		  fileLength = 0;
 			console.log('HANDLE MEDIA FILES TRIGGERED');
@@ -207,7 +208,11 @@ $(function() {
 	        console.log("URL:");
 					console.log(url);
 					mediaElem.src = url;
-					$('#messages').append(mediaElem);
+					if(idSender) {
+						hashmap[idSender].panel.find(".privateMessage").append(mediaElem);
+					} else {
+						$('#messages').append(mediaElem);
+					}
 					scrollToBottom();
 			 });
 		}
@@ -243,16 +248,16 @@ $(function() {
 	      size : file.size,
 				name : file.name,
 				type: file.type
-			});
+			}, currentSID);
 			ss.createBlobReadStream(file).pipe(stream)
-			if (currentSID !== undefined) {
-				console.log('emit upload to ' + currentSID)
-				socket.emit('privateUpload', {
-					'id' : currentSID
-				}, file.name);
-			} else {
-				socket.emit('upload', file.name);
-			}
+			// if (currentSID !== undefined) {
+			// 	console.log('emit upload to ' + currentSID)
+			// 	socket.emit('privateUpload', {
+			// 		'id' : currentSID
+			// 	}, file.name);
+			// } else {
+			// 	socket.emit('upload', file.name);
+			// }
 		}
 
 		// Prevent Default Handling for these events, i.e. opening the dropped
@@ -300,6 +305,8 @@ $(function() {
 				"panel" : newPanel,
 				"listEntryID" : nr
 			}
+			//Mapping socketID to map of its corresponding tab
+			hashmap[id] = newPanel;
 			nr++;
 		}
 
@@ -477,24 +484,6 @@ $(function() {
 		}
 
 		/**
-		 * TO BE REMOVED
-		 * @param {JSON} messageObj
-		 */
-		function handleClientUpload(messageObj) {
-			console.log('uploadnotice: broadcast')
-			$('#messages').append(fileUploaded(messageObj.filename, " by ", messageObj.userName))
-		}
-
-		/**
-		 * TO BE REMOVED
-		 * @param {*} messageObj
-		 */
-		function handleClientPrivateUpload(messageObj) {
-			console.log('uploadnotice')
-			hashmap[messageObj.userName].panel.find(".privateMessage").append(fileUploaded(messageObj.filename))
-		}
-
-		/**
 		 * Invoked whenever a user receives a whisper, adding the message
 		 * to the apropriate tab
 		 * @param {JSON} messageObj
@@ -581,7 +570,7 @@ $(function() {
 		socket.on('newuser', (userinfo) => handleNewuser(userinfo));
 		socket.on('userisgone', (username) => handleUserisgone(username))
 		socket.on('loginStatus', answer => handleLoginStatus(answer))
-		ss(socket).on('serverPushMediaFile', (stream, data) => handleMediaFile(stream,data))
+		ss(socket).on('serverPushMediaFile', (stream, data,idSender) => handleMediaFile(stream,data,idSender))
 
 		/* JQUERY-UI */
 		$("#tabs")
