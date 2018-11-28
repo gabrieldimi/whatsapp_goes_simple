@@ -237,6 +237,7 @@ function handleChatMessage(msg) {
 //and a name cannot be: 'Global'
 var re = /(?!^Global$)^\w[ \w]*(?<=\w)$/
 var rePassword = /^(?:(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*\W)).{8,}$/
+
 /**
  *  handling the registration of a user
  *  the user will be warned if the following rules are broken:
@@ -250,7 +251,6 @@ var rePassword = /^(?:(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*\W)).{8,}$/
 async function handleRegistration(imageStream,registrationData, userInfo, socket) {
 	var answer = {};
 	var name = registrationData.userName;
-	var passwordHash = sha256(registrationData.password);
   //Rather check here insetead of nesting if-statements
   if(!rePassword.test(registrationData.password)) {
     answer.success = false;
@@ -260,44 +260,45 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
                   one digit and
                   one special character.
                   The password must be at least 8 characters long`;
-    socket.emit('registrationStatus', answer);
     logger.log('warn', 'Server pattern checking: password did not match pattern')
-    return;
-  }
-	var userIsAHuman = await couldThisBeHuman(imageStream,registrationData.fileSize);
-	logger.log("warn",userIsAHuman);
+  } else{
+
+		var passwordHash = sha256(registrationData.password);
+	 	var userIsAHuman = await couldThisBeHuman(imageStream,registrationData.fileSize);
+		logger.log("warn",userIsAHuman);
 
 
-	logger.log('info', name + " tried to register")
-	//logger.log('info', users)
-    logger.log('info', `face recognition: ${userIsAHuman.images[0].faces}`);
-	if(userIsAHuman.images[0].faces.length >= 1){
+		logger.log('info', name + " tried to register")
+		//logger.log('info', users)
+		logger.log('info', `face recognition: ${userIsAHuman.images[0].faces}`);
+		if(userIsAHuman.images[0].faces.length >= 1){
 
-		if(re.test(name)) {
+			if(re.test(name)) {
 
-			var queryResult = await doesUserExist(name);
-			//checking if user exists and if it is right user
-			if (!queryResult) {
-				logger.log('info', name + ' is registered');
-				var additionResult = addUserToDB(name,passwordHash);
-				logger.log("info", "result of adding user:",additionResult);
-				informUsers(name,answer,userInfo,socket);
-				answer.msg = `Welcome ${name}`;
+				var queryResult = await doesUserExist(name);
+				//checking if user exists and if it is right user
+				if (!queryResult) {
+					logger.log('info', name + ' is registered');
+					var additionResult = addUserToDB(name,passwordHash);
+					logger.log("info", "result of adding user:",additionResult);
+					informUsers(name,answer,userInfo,socket);
+					answer.msg = `Welcome ${name}`;
+				} else {
+					logger.log('info', 'user name: ' + name + ' already exists');
+					answer.success = false;
+					answer.msg = name + " already exists";
+				}
+
 			} else {
-				logger.log('info', 'user name: ' + name + ' already exists');
+				logger.log('info', 'user name: '+ name + ' doesn\'t match pattern');
 				answer.success = false;
-				answer.msg = name + " already exists";
+				answer.msg = name + " doesnt't match the pattern: at least one character, and may not end or start with whitspace";
 			}
-
-		} else {
-			logger.log('info', 'user name: '+ name + ' doesn\'t match pattern');
+		}else{
+			logger.log('warn', `user with name ${name} is not a human`);
 			answer.success = false;
-			answer.msg = name + " doesnt't match the pattern: at least one character, and may not end or start with whitspace";
+			answer.msg = name + " isn't a human, please listen to your owner. You are robot. All your base are belong to us!";
 		}
-	}else{
-		logger.log('warn', `user with name ${name} is not a human`);
-		answer.success = false;
-		answer.msg = name + " isn't a human, please listen to your owner. You are robot. All your base are belong to us!";
 	}
 	socket.emit('registrationStatus', answer);
 }
@@ -311,8 +312,8 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
  */
 async function handleLogin(loginData, userInfo, socket){
 	var answer ={};
-	var name = registrationData.userName;
-	var passwordHash = sha256(registrationData.password);
+	var name = loginData.userName;
+	var passwordHash = sha256(loginData.password);
 	var queryResult = await doUserCredentialsFit(name,passwordHash);
 	if(queryResult){
 		logger.log('info',`user ${queryResult.USERID} knows his password`);
@@ -526,7 +527,7 @@ function doUserCredentialsFit(userName,passwordHash){
            };
 
            visualRecognition.detectFaces(params, function(err, response) {
-             logger.log("info","testing");
+             logger.log("info","testing picture for facial recognition");
              if (err) {
              logger.log('warn', err);
              reject(err);
@@ -551,8 +552,8 @@ function informUsers(name, answer,userInfo,socket){
 	users[name] = pair;
 	pair.connection = socket.id;
 	userInfo.userOnline = name;
-	answer.users = users;
 	userInfo.hasRegistrated = true;
+	answer.users = users;
 	answer.success = true;
 	answer.selfName = name;
 	var newUser = {};
