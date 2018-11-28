@@ -265,6 +265,7 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
   } else{
 
 		var passwordHash = sha256(registrationData.password);
+		logger.log("warn",`passwordHash by registration = '${passwordHash}'`);
 	 	var userIsAHuman = await couldThisBeHuman(imageStream,registrationData.fileSize);
 		logger.log("warn",userIsAHuman);
 
@@ -315,6 +316,7 @@ async function handleLogin(loginData, userInfo, socket){
 	var answer ={};
 	var name = loginData.userName;
 	var passwordHash = sha256(loginData.password);
+	logger.log("warn",`passwordHash by login= '${passwordHash}'`);
 	var queryResult = await doUserCredentialsFit(name,passwordHash);
 	if(queryResult){
 		logger.log('info',`user ${queryResult.USERID} knows his password`);
