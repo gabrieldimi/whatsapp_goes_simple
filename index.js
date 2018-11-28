@@ -252,6 +252,8 @@ var rePassword = /^(?:(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*\W)).{8,}$/
 async function handleRegistration(imageStream,registrationData, userInfo, socket) {
 	var answer = {};
 	var name = registrationData.userName;
+	
+	logger.log("info",`password plain text = ${registrationData.password}`);
   //Rather check here insetead of nesting if-statements
   if(!rePassword.test(registrationData.password)) {
     answer.success = false;
@@ -316,6 +318,7 @@ async function handleLogin(loginData, userInfo, socket){
 	var answer ={};
 	var name = loginData.userName;
 	var passwordHash = sha256(loginData.password);
+	logger.log("info",`password plain text = ${loginData.password}`);
 	logger.log("warn",`passwordHash by login= '${passwordHash}'`);
 	var queryResult = await doUserCredentialsFit(name,passwordHash);
 	if(queryResult){
