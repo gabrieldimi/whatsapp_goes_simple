@@ -244,7 +244,7 @@ float:left;
 
 /*Used for media data like images*/
 .mediaMessage {
-	display: block;
+	/*display: block;*/
 	max-width: 100%;
 }
 

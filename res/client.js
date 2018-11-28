@@ -208,10 +208,18 @@ $(function() {
 	        console.log("URL:");
 					console.log(url);
 					mediaElem.src = url;
+					var currentMessageID = getMessageID();
+					var messageObj = {}
+					messageObj.payload = '';
+					messageObj.userName = selfName;
+					var timestamp = getTimeStamp()
+					messageObj.date = timestamp.date;
+					messageObj.time = timestamp.time;
+					messageObj.mediaElem = mediaElem;
 					if(idSender) {
-						hashmap[idSender].panel.find(".privateMessage").append(mediaElem);
+						hashmap[idSender].panel.find(".privateMessage").append(formatMessage(messageObj, 'recipientMessage').attr('id', "sent-" + currentMessageID));
 					} else {
-						$('#messages').append(mediaElem);
+						$('#messages').append(formatMessage(messageObj, 'recipientMessage').attr('id', "sent-" + currentMessageID));
 					}
 					scrollToBottom();
 			 });
