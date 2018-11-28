@@ -520,7 +520,7 @@ $(function() {
 		/*
 			Implementation for handleLoginStatus and handleRegistrationStatus
 		*/
-		function handleLogin() {
+		function handleLogin(obj) {
 			if (obj.success) {
 				selfName = obj.selfName;
 				if (obj.users) {
@@ -565,14 +565,14 @@ $(function() {
 		 * @param {JSON} obj
 		 */
 		function handleRegistrationStatus(obj) {
-			handleLogin();
+			handleLogin(obj);
 		}
 
 		/*Callback for handling the logInput
 		Does the same as handleRegistrationStatus
 		*/
 		function handleLoginStatus(obj) {
-			handleLogin();
+			handleLogin(obj);
 		}
 		//See SOCKET.IO CALLBACK FUNCTIONS, registering all callback functions
 		socket.on('registrationStatus', (obj) => handleRegistrationStatus(obj));
