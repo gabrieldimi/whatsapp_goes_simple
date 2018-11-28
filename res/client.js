@@ -520,7 +520,7 @@ $(function() {
 		/*
 			Implementation for handleLoginStatus and handleRegistrationStatus
 		*/
-		function handeLogin() {
+		function handleLogin() {
 			if (obj.success) {
 				selfName = obj.selfName;
 				if (obj.users) {
