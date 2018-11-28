@@ -253,7 +253,7 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 	var answer = {};
 	var name = registrationData.userName;
 	
-	logger.log("info",`password plain text = ${registrationData.password}`);
+	// logger.log("info",`password plain text = ${registrationData.password}`);
   //Rather check here insetead of nesting if-statements
   if(!rePassword.test(registrationData.password)) {
     answer.success = false;
@@ -318,19 +318,26 @@ async function handleLogin(loginData, userInfo, socket){
 	var answer ={};
 	var name = loginData.userName;
 	var passwordHash = sha256(loginData.password);
-	logger.log("info",`password plain text = ${loginData.password}`);
+	// logger.log("info",`password plain text = ${loginData.password}`);
 	logger.log("warn",`passwordHash by login= '${passwordHash}'`);
 	var queryResult = await doUserCredentialsFit(name,passwordHash);
-	if(queryResult){
-		logger.log('info',`user ${queryResult.USERID} knows his password`);
-		informUsers(queryResult.USERID,answer,userInfo,socket);
-		answer.msg = `Welcome back, ${queryResult.USERID}`;
+	if(!users[name]){
+		if(queryResult){
+			logger.log('info',`user ${queryResult.USERID} knows his password`);
+			informUsers(queryResult.USERID,answer,userInfo,socket);
+			answer.msg = `Welcome back, ${queryResult.USERID}`;
+		}else{
+			logger.log('info',"either user name or password doesn't match");
+			answer.success = false;
+			answer.msg = "Either user name or password doesn't match!";
+		}
+	
 	}else{
-		logger.log('info',"either user name or password doesn't match");
+		logger.log('info',"user is already logged in");
 		answer.success = false;
-		answer.msg = "Either user name or password doesn't match!";
+		answer.msg = "You are already logged in.";
 	}
-
+	
 	socket.emit('loginStatus',answer);
 }
 
