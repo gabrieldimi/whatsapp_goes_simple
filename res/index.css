@@ -211,11 +211,11 @@ float:left;
 	position: relative;
 }
 
-#registration > * {
+.chatDataForm > * {
 	margin-top: 10px !important;
 }
 
-#submitBtn {
+.submitBtns {
 	display: block;
 	margin: auto;
 	font-size: 24pt;

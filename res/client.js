@@ -3,11 +3,15 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 */
 $(function() {
 
+		//contains the current blob URL of the current profile image
 		var blobStore;
 		$("#profilePicker").on("change", (event) => {
 			var file = event.target.files[0];
+			//New profile picture has been picked, old blob is not needed anymore
+			if(blobStore) {
+				URL.revokeObjectURL(blobStore);
+			}
 			blobStore = file;
-			// TODO: revoke?
 			var url = URL.createObjectURL(file);
 			$("#profilePreview").attr('src', url);
 		})
@@ -81,7 +85,7 @@ $(function() {
 						console.log(error)
 					});
 				} else {
-					//TODO: disable button
+					$('#captureWebcam').css('display', 'none');
 					console.log("navigator.mediaDevices.getUserMedia API not available")
 				}
 			})
@@ -89,7 +93,10 @@ $(function() {
 			takeSnapshot.on('click', () => {
 					ctx.drawImage(preview[0], 0, 0, 256, 256);
 					profileCanvas[0].toBlob(blob => {
-						//TODO: revoke?
+						//New snap has been taken, old blob is not needed anymore
+						if(blobStore) {
+							URL.revokeObjectURL(blobStore);
+						}
 						blobStore = blob;
 						url = URL.createObjectURL(blob);
 						profilePreview.attr('src', url)
@@ -240,12 +247,10 @@ $(function() {
 			ss.createBlobReadStream(file).pipe(stream)
 			if (currentSID !== undefined) {
 				console.log('emit upload to ' + currentSID)
-				//currentPanel.find(".privateMessage").append(fileUploaded(file.name)); FIXME: remove
 				socket.emit('privateUpload', {
 					'id' : currentSID
 				}, file.name);
 			} else {
-				//$('#messages').append(fileUploaded(file.name)); FIXME: remove
 				socket.emit('upload', file.name);
 			}
 		}
@@ -351,13 +356,6 @@ $(function() {
 					+ ": has left the room"))
 		}
 
-		/*
-		* TODO: TO BE REMOVED
-		*/
-		/*function fileUploaded(filename) {
-			return markedMessage('', $('<a>').text(filename + ' has been uploaded to the server').attr('href', '/'+filename).attr("target", "_blank"))
-		}*/
-
 		// getting timestamp for posted message from server
 		function callback(timestamp, messageID) {
 			console.log('server callback timestamp: ');
@@ -390,6 +388,16 @@ $(function() {
 			} else {
 				$("#errorMessage").text('please provide a profile picture.')
 			}
+			return false;
+		});
+
+		//TODO: Documentation
+		$('#login').submit(function() {
+			var loginData = {};
+			loginData.userName = $('#logInput').val();
+			loginData.password = $('#loginPasswd').val();
+			socket.emit('login', loginData);
+			console.log('emmitted: ', loginData);
 			return false;
 		});
 
@@ -509,6 +517,33 @@ $(function() {
 			scrollToBottom();
 		}
 
+		/*
+			Implementation for handleLoginStatus and handleRegistrationStatus
+		*/
+		function handeLogin() {
+			if (obj.success) {
+				selfName = obj.selfName;
+				if (obj.users) {
+					console.log("all known users: ")
+					console.log(obj.users);
+					for ( var key in obj.users) {
+						if (key != selfName && !hashmap[key]) {
+							console.log("adding:", key)
+							addUser(key, obj.users[key].connection); // TODO: connection bad name server should not send selfName, obj bad name
+						}
+					}
+					$("#tabs").tabs("refresh");
+				}
+				$('#regOverlay').css("display", "none");
+				$('#blurry').css("filter", "none");
+			} else {
+				console.log(obj.msg);
+				$('#regOverlay #errorMessage').text(obj.msg);
+				URL.revokeObjectURL(blobStore);
+			//	$('$logInput').addClass('errorBoxOutline');
+			}
+		}
+
 		/** TODO: Possibly as return value of connection?
 		 * Callback for handling the registration.
 		 * Either registers the user to the server and loads all current know chat partners
@@ -530,40 +565,25 @@ $(function() {
 		 * @param {JSON} obj
 		 */
 		function handleRegistrationStatus(obj) {
-			if (obj.success) {
-				selfName = obj.selfName;
-				if (obj.users) {
-					console.log("all known users: ")
-					console.log(obj.users);
-					for ( var key in obj.users) {
-						if (key != selfName && !hashmap[key]) {
-							console.log("adding:")
-							console.log(key)
-							addUser(key, obj.users[key].connection); // connection bad name server should not send selfName, obj bad name
-						}
-					}
-					$("#tabs").tabs("refresh");
-				}
-				$('#regOverlay').css("display", "none");
-				$('#blurry').css("filter", "none");
-			}else{
-				console.log(obj.msg);
-				$('#regOverlay #errorMessage').text(obj.msg);
-				$('$regInput').addClass('errorBoxOutline');
-			}
+			handleLogin();
+		}
+
+		/*Callback for handling the logInput
+		Does the same as handleRegistrationStatus
+		*/
+		function handleLoginStatus(obj) {
+			handleLogin();
 		}
 		//See SOCKET.IO CALLBACK FUNCTIONS, registering all callback functions
 		socket.on('registrationStatus', (obj) => handleRegistrationStatus(obj));
 		socket.on('chat message', (messageObj) => handleChatMessage(messageObj));
 		socket.on('clientPrivateMessage', (messageObj) => handleClientPrivateMessage(messageObj));
-		/*socket.on('clientPrivateUpload', (messageObj) => handleClientPrivateUpload(messageObj))
-		socket.on('clientUpload', (messageObj) => handleClientUpload(messageObj))*/
 		socket.on('newuser', (userinfo) => handleNewuser(userinfo));
 		socket.on('userisgone', (username) => handleUserisgone(username))
+		socket.on('loginStatus', answer => handleLoginStatus(answer))
 		ss(socket).on('serverPushMediaFile', (stream, data) => handleMediaFile(stream,data))
 
 		/* JQUERY-UI */
-
 		$("#tabs")
 				.tabs(
 						{
