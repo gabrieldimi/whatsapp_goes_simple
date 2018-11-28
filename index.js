@@ -458,7 +458,7 @@ function addUserToDB(userName,passwordHash){
  */
 function doUserCredentialsFit(userName,passwordHash){
 	return new Promise(function (resolve, reject) {
-		databaseConnection.query(`select userid, passwd from Users where userid = '${userName}' and passwd = '${passwordHash}';`,function(err,result,moreresults){
+		databaseConnection.query(`select userid, password from Users where USERID='${userName}' and PASSWORD='${passwordHash}';`,function(err,result,moreresults){
 			logger.log("info", "callback of searching for a user with specific password");
 			if(err){
 				logger.log('error', err);
