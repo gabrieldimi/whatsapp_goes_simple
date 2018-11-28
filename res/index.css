@@ -21,13 +21,18 @@ html, body {
 	overflow-x: hidden;
 }
 
-#chatBody {
+#chatBodyContainer {
 	position: relative;
-	background: #fafafa;
 	height: 100%;
 	width: 80%;
-	display: block;
 	float: left;
+}
+
+#chatBody {
+	position: relative;
+	height: 100%;
+	background: #fafafa;
+	display: block;
 	overflow-y: scroll;
 }
 
@@ -161,6 +166,7 @@ float:left;
 
 #dropOverlay {
 	position:absolute;
+	top: 0;
 	display:table;
 	background:black;
 	width:100%;

@@ -225,7 +225,7 @@ $(function() {
 			 });
 		}
 
-		var dropArea = $('#chatBody')[0];
+		var dropArea = $('#chatBodyContainer')[0];
 		var messageID = 0;
 
 		function preventDefaults(e) {
