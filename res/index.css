@@ -337,11 +337,12 @@ float:left;
 
 @keyframes textLoader {
 	100% {
-		text-shadow: 100px 0px blue, 200px 0px red, 300px 0px green, -100px 0px blue, -200px 0px red, -300px 0px green;
+		text-shadow: 100px 0px blue, 200px 0px red, 300px 0px green, -100px 0px blue, -200px 0px red, -300px 0px green, 0px 50px red, 0px -50px blue, 0px 100px yellow, 0px -100px cyan;
 	}
 }
 
 #loadingText {
+	font-size: 36pt;
 	text-shadow: 0px 0px blue, 0px 0px red, 0px 0px blue, 0px 0px red;
 	animation: textLoader 2s ease-in-out 0.4s infinite alternate;
 }
