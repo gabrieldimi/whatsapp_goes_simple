@@ -389,6 +389,7 @@ $(function() {
 		 * Invoked when on successfully filling out the registration formatMessage
 		 */
 		$('#registration').submit(function() {
+			$('#loadingOverlay').css('display', 'block');
 			var writableStream = ss.createStream();
 			var file = blobStore;
 			console.log('file:', file)
@@ -518,6 +519,7 @@ $(function() {
 			Implementation for handleLoginStatus and handleRegistrationStatus
 		*/
 		function handleLogin(obj) {
+			$('#loadingOverlay').css('display', 'none');
 			if (obj.success) {
 				selfName = obj.selfName;
 				if (obj.users) {

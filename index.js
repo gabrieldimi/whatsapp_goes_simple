@@ -364,6 +364,10 @@ app.get('/weblogger', function(req,res) {
 	res.sendFile(__dirname + '/weblogger.html')
 });
 
+app.get('/favicon.gif', (req,res) => {
+  res.sendFile(__dirname + '/favicon.gif')
+})
+
 var socketWeblogger = io.of('/weblogger');
 socketWeblogger.on('connection',function(socket) {
 	logger.log('info', 'weblogger listening')
