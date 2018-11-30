@@ -389,11 +389,11 @@ $(function() {
 		 * Invoked when on successfully filling out the registration formatMessage
 		 */
 		$('#registration').submit(function() {
-			$('#loadingOverlay').css('display', 'block');
 			var writableStream = ss.createStream();
 			var file = blobStore;
 			console.log('file:', file)
 			if(file instanceof Blob) {
+				$('#loadingOverlay').css('display', 'block');
 				var registrationData = {};
 				registrationData.userName = $('#regInput').val();
 				registrationData.password = $('#passwd').val();
