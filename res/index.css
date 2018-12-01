@@ -334,6 +334,17 @@ float:left;
 	-moz-animation: loading 8s ease infinite;
 	animation: loading 8s ease infinite;
 }
+@-moz-keyframes textLoader {
+	100% {
+		text-shadow: 100px 0px blue, 200px 0px red, 300px 0px green, -100px 0px blue, -200px 0px red, -300px 0px green, 0px 50px red, 0px -50px blue, 0px 100px yellow, 0px -100px cyan;
+	}
+}
+
+@-webkit-keyframes textLoader {
+	100% {
+		text-shadow: 100px 0px blue, 200px 0px red, 300px 0px green, -100px 0px blue, -200px 0px red, -300px 0px green, 0px 50px red, 0px -50px blue, 0px 100px yellow, 0px -100px cyan;
+	}
+}
 
 @keyframes textLoader {
 	100% {

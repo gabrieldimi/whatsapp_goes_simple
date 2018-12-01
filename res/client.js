@@ -1,10 +1,54 @@
 /*
 Contributors: Gabriel Dimitrov, Julian Leuze
 */
+//Polyfill for toBlob()
+if (!HTMLCanvasElement.prototype.toBlob) {
+  Object.defineProperty(HTMLCanvasElement.prototype, 'toBlob', {
+    value: function (callback, type, quality) {
+      var dataURL = this.toDataURL(type, quality).split(',')[1];
+      setTimeout(function() {
+
+        var binStr = atob( dataURL ),
+            len = binStr.length,
+            arr = new Uint8Array(len);
+
+        for (var i = 0; i < len; i++ ) {
+          arr[i] = binStr.charCodeAt(i);
+        }
+
+        callback( new Blob( [arr], {type: type || 'image/png'} ) );
+
+      });
+    }
+  });
+}
+
 $(function() {
 
-		//contains the current blob URL of the current profile image
-		var blobStore;
+		//Globals
+		var socket = io();
+		/*
+		 * Hashmap containing info about all currently known logged in users.
+		 * Structure: {
+		 			"username" : {
+            "id:": id,
+            "panel": panel,
+            "listEntryID": listEntryID
+				},
+				"socketid": panel
+	 		}
+		 */
+		var hashmap = {};
+		var currentSID;
+		var currentPanel;
+		var selfName;
+		var dropArea = $('#chatBodyContainer')[0];
+		var messageID = 0;
+		var chatBody = $('#chatBody')[0];
+		var blobStore; //contains the current blob URL of the current profile image
+    //tab id for activer user list, used by JQUERY-UI
+		var nr = 2;
+
 		$("#profilePicker").on("change", (event) => {
 			var file = event.target.files[0];
 			//New profile picture has been picked, old blob is not needed anymore
@@ -20,13 +64,12 @@ $(function() {
 		function addCustomInputErrorMessages() {
 			$("#regInput").on("input", (event) => {
 				if(event.target.validity.patternMismatch) {
-				event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores. Username: 'Global' is not allowed")
-			} else {
-				//Needs to be empty to validate
-				event.target.setCustomValidity("");
-			}
-			}
-			);
+					event.target.setCustomValidity("Username must contain at least one character and may not start or end with whitespace. Allowed characters are lower- and uppercase letters, spaces and underscores. Username: 'Global' is not allowed")
+				} else {
+					//Needs to be empty to validate
+					event.target.setCustomValidity("");
+				}
+			});
 
 			$("#passwd").on("input", (event) => {
 				if(event.target.validity.patternMismatch) {
@@ -113,7 +156,8 @@ $(function() {
 		}
 		prepareWebcamUI();
 
-		function addLeadingZeroToMinutes(dateObject){
+    //Helper function for better date format
+		function addLeadingZeroToMinutes(dateObject) {
 		mins = dateObject.getMinutes();
 		if(mins < 10){
 			mins = '0'+ mins;
@@ -121,6 +165,7 @@ $(function() {
 		return mins;
 		}
 
+    //function to build a timestamp
 		function getTimeStamp()	{
 			var timestamp ={};
 			var dateObj = new Date();
@@ -131,7 +176,6 @@ $(function() {
 		    return timestamp;
 		}
 
-		var chatBody = $('#chatBody')[0];
 		/*
 		 * To be invoked after a new message has been received, to scroll to the
 		 * latest message
@@ -140,6 +184,7 @@ $(function() {
 			chatBody.scrollTop = chatBody.scrollHeight;
 		}
 
+    //Creates the proper HTML element for received media
 		function buildMediaElem(type) {
 			var mediaElem;
 			switch(type.substring(0, type.indexOf("/"))) {
@@ -193,7 +238,7 @@ $(function() {
 	                var filedata = new Uint8Array(fileLength),
 	                i = 0;
 
-	                // == Loop to fill the final array
+	                //Loop to fill the final array
 	                fileBuffer.forEach(function (buff) {
 	                    for (var j = 0; j < buff.length; j++,i++) {
 	                        filedata[i] = buff[j];
@@ -225,28 +270,32 @@ $(function() {
 			 });
 		}
 
-		var dropArea = $('#chatBodyContainer')[0];
-		var messageID = 0;
-
+    // Prevent Default Handling for these events, i.e. opening the dropped
+		// file in a new tab
 		function preventDefaults(e) {
 			e.preventDefault();
 			e.stopPropagation();
 		}
 
+    //remove dropzone after file has been dropped
 		function unhighlight() {
 			$('#dropOverlay').css({'opacity': '0'})
 		}
 
+    //Make dropzone visible on file drag
 		function highlight() {
 			$('#dropOverlay').css({'opacity': '0.5', 'border':'3px dashed white'});
 		}
 
+    //function to keep track of message IDs
 		function getMessageID() {
 			return messageID++;
 		}
 
+    //Invoked when file is dropped in dropzone, starting the transmison of the file
 		function handleFiles(file) {
 			console.log(file)
+      //stream needs to be in objectMode to transfer files bigger than 16KiB
 			var stream = ss.createStream({
 				objectMode: true,
 				highWaterMark: 16384
@@ -258,14 +307,6 @@ $(function() {
 				type: file.type
 			}, currentSID);
 			ss.createBlobReadStream(file).pipe(stream)
-			// if (currentSID !== undefined) {
-			// 	console.log('emit upload to ' + currentSID)
-			// 	socket.emit('privateUpload', {
-			// 		'id' : currentSID
-			// 	}, file.name);
-			// } else {
-			// 	socket.emit('upload', file.name);
-			// }
 		}
 
 		// Prevent Default Handling for these events, i.e. opening the dropped
@@ -280,11 +321,12 @@ $(function() {
 			dropArea.addEventListener(eventName, highlight, false);
 		});
 
+    //remove dropzone after file has been dropped
 		;['dragleave', 'drop'].forEach(eventName => {
 			dropArea.addEventListener(eventName, unhighlight, false);
 		});
 
-
+    //Listener for the filedrop event
 		dropArea.addEventListener('drop', function(e) {
 			console.log(e.dataTransfer.files);
 
@@ -299,7 +341,6 @@ $(function() {
 			}
 		});
 
-		var nr = 2;
 		// adds a new tab and Panel for every user
 		function addUser(name, id) {
 			$("#contacts").append(
@@ -379,12 +420,6 @@ $(function() {
 		// implemented on server yet
 		}
 
-		var socket = io();
-		var hashmap = {};
-		var currentSID;
-		var currentPanel;
-		var selfName;
-
 		/*
 		 * Invoked when on successfully filling out the registration formatMessage
 		 */
@@ -407,7 +442,7 @@ $(function() {
 			return false;
 		});
 
-		//TODO: Documentation
+		//function to handle login of users
 		$('#login').submit(function() {
 			var loginData = {};
 			loginData.userName = $('#logInput').val();
@@ -449,6 +484,7 @@ $(function() {
 				});
 
 				/*
+         * function to append received messages and media to the proper panel
 				 * TODO: use as only one
 				*/
 				function appendToActiveTab(elem, mediaElem) {
@@ -574,15 +610,16 @@ $(function() {
 			handleLogin(obj);
 		}
 		//See SOCKET.IO CALLBACK FUNCTIONS, registering all callback functions
-		socket.on('registrationStatus', (obj) => handleRegistrationStatus(obj));
-		socket.on('chat message', (messageObj) => handleChatMessage(messageObj));
-		socket.on('clientPrivateMessage', (messageObj) => handleClientPrivateMessage(messageObj));
-		socket.on('newuser', (userinfo) => handleNewuser(userinfo));
-		socket.on('userisgone', (username) => handleUserisgone(username))
-		socket.on('loginStatus', answer => handleLoginStatus(answer))
-		ss(socket).on('serverPushMediaFile', (stream, data,idSender) => handleMediaFile(stream,data,idSender))
+		socket.on('registrationStatus', handleRegistrationStatus);
+		socket.on('chat message', handleChatMessage);
+		socket.on('clientPrivateMessage', handleClientPrivateMessage);
+		socket.on('newuser', handleNewuser);
+		socket.on('userisgone', handleUserisgone)
+		socket.on('loginStatus', handleLoginStatus)
+		ss(socket).on('serverPushMediaFile', handleMediaFile)
 
 		/* JQUERY-UI */
+    //inital creation of the user tab list
 		$("#tabs")
 				.tabs(
 						{
