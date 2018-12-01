@@ -279,12 +279,12 @@ $(function() {
 
     //remove dropzone after file has been dropped
 		function unhighlight() {
-			$('#dropOverlay').css({'opacity': '0'})
+			$('#dropOverlay').css('visibility', 'hidden')
 		}
 
     //Make dropzone visible on file drag
 		function highlight() {
-			$('#dropOverlay').css({'opacity': '0.5', 'border':'3px dashed white'});
+			$('#dropOverlay').css('visibility', 'visible');
 		}
 
     //function to keep track of message IDs
