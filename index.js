@@ -358,7 +358,7 @@ app.get('/', function(req, res) {
 	logger.log('info', "Client IP: " + req.connection.remoteAddress)
   res.addHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io");
   res.addHeader('X-Content-Type-Options', 'nosniff');
-  res.addHeader('X-XSS-Protection' '1');
+  res.addHeader('X-XSS-Protection', '1');
   res.addHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
 	res.sendFile(__dirname + '/index.html');
 });
