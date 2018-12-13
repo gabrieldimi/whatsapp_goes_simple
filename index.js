@@ -20,43 +20,49 @@ const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
-//io.adapter(redis({ host: process.env.REDIS_ENDPOINT, port: 6379 }));
 
-// Then we'll pull in the database client library
+var redis = require('redis');  
+var url = config.get('rediss://admin:EXSEHIUGPRZEVINH@portal534-35.bmix-eu-gb-yp-d74fa06e-3207-4aa3-8df1-90a11d8b5912.2776438729.composedb.com:16533');  
+var client1 = redis.createClient(url);  
+console.log("test");
+console.log(client1);
+// //io.adapter(redis({ host: process.env.REDIS_ENDPOINT, port: 6379 }));
 
-const redis = require("redis");
+// // Then we'll pull in the database client library
 
-// Now lets get cfenv and ask it to parse the environment variable
+// const redis = require("redis");
 
-let cfenv = require('cfenv');
+// // Now lets get cfenv and ask it to parse the environment variable
 
-// load local VCAP configuration  and service credentials
+// let cfenv = require('cfenv');
 
-let vcapLocal;
-try {
+// // load local VCAP configuration  and service credentials
 
-  vcapLocal = require('./vcap-local.json');
+// let vcapLocal;
+// try {
 
-  console.log("Loaded local VCAP");
+//   vcapLocal = require('./vcap-local.json');
 
-} catch (e) { 
+//   console.log("Loaded local VCAP");
 
-    // console.log(e)
-}
+// } catch (e) { 
 
-
-
-const appEnvOpts = vcapLocal ? { vcap: vcapLocal} : {}
-
-const appEnv = cfenv.getAppEnv(appEnvOpts);
+//     // console.log(e)
+// }
 
 
 
-// Within the application environment (appenv) there's a services object
+// const appEnvOpts = vcapLocal ? { vcap: vcapLocal} : {}
 
-let services = appEnv.services;
+// const appEnv = cfenv.getAppEnv(appEnvOpts);
 
-console.log(services);
+
+
+// // Within the application environment (appenv) there's a services object
+
+// let services = appEnv.services;
+
+// console.log(services);
 
 
 // The services object is a map named by service so we extract the one for Redis
