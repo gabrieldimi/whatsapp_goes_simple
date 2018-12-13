@@ -21,6 +21,7 @@ const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 
+const config = require('config');
 var redis = require('redis');  
 var url = config.get('rediss://admin:EXSEHIUGPRZEVINH@portal534-35.bmix-eu-gb-yp-d74fa06e-3207-4aa3-8df1-90a11d8b5912.2776438729.composedb.com:16533');  
 var client1 = redis.createClient(url);  
