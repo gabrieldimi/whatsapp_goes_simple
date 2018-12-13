@@ -7,18 +7,26 @@
 /**
  * requiring modules
  */
-var fs = require("fs");
-var stream = require('stream');
-var sha256 = require('sha256');
-var request = require('request')
-var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
-var ibmdb = require('ibm_db');
+const fs = require("fs");
+const stream = require('stream');
+const sha256 = require('sha256');
+const request = require('request')
+const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
+const ibmdb = require('ibm_db');
+const redis = require('socket.io-redis');
 const express = require('express')
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
+
+//io.adapter(redis({ host: process.env.REDIS_ENDPOINT, port: 6379 }));
+
+//TODO: remove API key
+io.adapter(redis({ host: 'rediss://admin:EXSEHIUGPRZEVINH@portal534-35.bmix-eu-gb-yp-d74fa06e-3207-4aa3-8df1-90a11d8b5912.2776438729.composedb.com:16533', port: 6379 }));
+
+logger.log('info', process.env);
 
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
