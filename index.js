@@ -21,23 +21,7 @@ const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 
-// const config = require('config');
-// var redis = require('redis');  
-// var url = config.get('rediss://admin:FGBCTXAZKKXSVTSF@sl-eu-gb-p02.dblayer.com:16537');  
-// var client1 = redis.createClient(url);  
-console.log("test");
-console.log(client1);
-// //io.adapter(redis({ host: process.env.REDIS_ENDPOINT, port: 6379 }));
-
-// Then we'll pull in the database client library
-
 const redis = require("redis");
-
-// Now lets get cfenv and ask it to parse the environment variable
-
-let cfenv = require('cfenv');
-
-
 
 let client = null;
 var connectionString ="rediss://admin:FGBCTXAZKKXSVTSF@sl-eu-gb-p01.dblayer.com:16537";
