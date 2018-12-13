@@ -56,11 +56,12 @@ const appEnv = cfenv.getAppEnv(appEnvOpts);
 
 let services = appEnv.services;
 
+console.log(services);
 
 
 // The services object is a map named by service so we extract the one for Redis
 
-let redis_services = services["compose-for-redis"];
+//let redis_services = services["compose-for-redis"];
 
 
 
@@ -72,49 +73,49 @@ let redis_services = services["compose-for-redis"];
 
 // We now take the first bound Redis service and extract it's credentials object
 
-let credentials = redis_services[0].credentials;
+// let credentials = redis_services[0].credentials;
 
 
 
-let connectionString = credentials.uri;
+// let connectionString = credentials.uri;
 
 
 
-let client = null;
+// let client = null;
 
 
 
-if (connectionString.startsWith("rediss://")) {
+// if (connectionString.startsWith("rediss://")) {
 
-    // If this is a rediss: connection, we have some other steps.
+//     // If this is a rediss: connection, we have some other steps.
 
-    client = redis.createClient(connectionString, {
+//     client = redis.createClient(connectionString, {
 
-        tls: { servername: new URL(connectionString).hostname }
+//         tls: { servername: new URL(connectionString).hostname }
 
-		});
+// 		});
 		
-		console.log("redis has started");
+// 		console.log("redis has started");
 
-    // This will, with node-redis 2.8, emit an error:
+//     // This will, with node-redis 2.8, emit an error:
 
-    // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
+//     // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
 
-    // This is a bogus message and should be fixed in a later release of the package.
+//     // This is a bogus message and should be fixed in a later release of the package.
 
-} else {
+// } else {
 
-		client = redis.createClient(connectionString);
+// 		client = redis.createClient(connectionString);
 
-}
+// }
 
 
 
-client.on("error", function(err) {
+// client.on("error", function(err) {
 
-    console.log("Error " + err);
+//     console.log("Error " + err);
 
-});
+// });
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 
