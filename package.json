@@ -6,6 +6,7 @@
     "express": "^4.16.4",
     "express-static": "*",
     "ibm_db": "git+https://git@github.com/ibmdb/node-ibm_db.git",
+    "redis": "^2.8.0",
     "request": "^2.88.0",
     "sha256": "^0.2.0",
     "socket.io": "^2.1.1",
