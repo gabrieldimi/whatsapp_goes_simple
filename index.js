@@ -45,6 +45,9 @@ if (connectionString.startsWith("rediss://")) {
 
 }
 
+console.log(client);
+console.log(process.env);
+
 client.on("error", function(err) {
 
     console.log("Error " + err);
