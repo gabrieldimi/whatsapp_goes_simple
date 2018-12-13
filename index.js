@@ -21,108 +21,59 @@ const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 
-const config = require('config');
-var redis = require('redis');  
-var url = config.get('rediss://admin:EXSEHIUGPRZEVINH@portal534-35.bmix-eu-gb-yp-d74fa06e-3207-4aa3-8df1-90a11d8b5912.2776438729.composedb.com:16533');  
-var client1 = redis.createClient(url);  
+// const config = require('config');
+// var redis = require('redis');  
+// var url = config.get('rediss://admin:FGBCTXAZKKXSVTSF@sl-eu-gb-p02.dblayer.com:16537');  
+// var client1 = redis.createClient(url);  
 console.log("test");
 console.log(client1);
 // //io.adapter(redis({ host: process.env.REDIS_ENDPOINT, port: 6379 }));
 
-// // Then we'll pull in the database client library
+// Then we'll pull in the database client library
 
-// const redis = require("redis");
+const redis = require("redis");
 
-// // Now lets get cfenv and ask it to parse the environment variable
+// Now lets get cfenv and ask it to parse the environment variable
 
-// let cfenv = require('cfenv');
-
-// // load local VCAP configuration  and service credentials
-
-// let vcapLocal;
-// try {
-
-//   vcapLocal = require('./vcap-local.json');
-
-//   console.log("Loaded local VCAP");
-
-// } catch (e) { 
-
-//     // console.log(e)
-// }
+let cfenv = require('cfenv');
 
 
 
-// const appEnvOpts = vcapLocal ? { vcap: vcapLocal} : {}
-
-// const appEnv = cfenv.getAppEnv(appEnvOpts);
-
+let client = null;
+var connectionString ="rediss://admin:FGBCTXAZKKXSVTSF@sl-eu-gb-p01.dblayer.com:16537";
 
 
-// // Within the application environment (appenv) there's a services object
+if (connectionString.startsWith("rediss://")) {
 
-// let services = appEnv.services;
+    // If this is a rediss: connection, we have some other steps.
 
-// console.log(services);
+    client = redis.createClient(connectionString, {
 
+        tls: { servername: new URL(connectionString).hostname }
 
-// The services object is a map named by service so we extract the one for Redis
-
-//let redis_services = services["compose-for-redis"];
-
-
-
-// // This check ensures there is a services for Redis databases
-
-// assert(!util.isUndefined(redis_services), "Must be bound to compose-for-redis services");
-
-
-
-// We now take the first bound Redis service and extract it's credentials object
-
-// let credentials = redis_services[0].credentials;
-
-
-
-// let connectionString = credentials.uri;
-
-
-
-// let client = null;
-
-
-
-// if (connectionString.startsWith("rediss://")) {
-
-//     // If this is a rediss: connection, we have some other steps.
-
-//     client = redis.createClient(connectionString, {
-
-//         tls: { servername: new URL(connectionString).hostname }
-
-// 		});
+		});
 		
-// 		console.log("redis has started");
+		console.log("redis has started");
 
-//     // This will, with node-redis 2.8, emit an error:
+    // This will, with node-redis 2.8, emit an error:
 
-//     // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
+    // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
 
-//     // This is a bogus message and should be fixed in a later release of the package.
+    // This is a bogus message and should be fixed in a later release of the package.
 
-// } else {
+} else {
 
-// 		client = redis.createClient(connectionString);
+		client = redis.createClient(connectionString);
 
-// }
+}
 
 
 
-// client.on("error", function(err) {
+client.on("error", function(err) {
 
-//     console.log("Error " + err);
+    console.log("Error " + err);
 
-// });
+});
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 
