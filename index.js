@@ -64,9 +64,9 @@ let redis_services = services["compose-for-redis"];
 
 
 
-// This check ensures there is a services for Redis databases
+// // This check ensures there is a services for Redis databases
 
-assert(!util.isUndefined(redis_services), "Must be bound to compose-for-redis services");
+// assert(!util.isUndefined(redis_services), "Must be bound to compose-for-redis services");
 
 
 
