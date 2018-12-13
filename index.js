@@ -13,7 +13,7 @@ const sha256 = require('sha256');
 const request = require('request')
 const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
 const ibmdb = require('ibm_db');
-const redis = require('socket.io-redis');
+const redis = require('redis');
 const express = require('express')
 const app = express();
 const http = require('http').Server(app);
@@ -23,14 +23,101 @@ const logger = require('./log.js')
 
 //io.adapter(redis({ host: process.env.REDIS_ENDPOINT, port: 6379 }));
 
-//TODO: remove API key
-io.adapter(redis({ host: 'rediss://admin:EXSEHIUGPRZEVINH@portal534-35.bmix-eu-gb-yp-d74fa06e-3207-4aa3-8df1-90a11d8b5912.2776438729.composedb.com:16533', port: 6379 }));
+// Then we'll pull in the database client library
 
-logger.log('info', process.env);
+const redis = require("redis");
 
+// Now lets get cfenv and ask it to parse the environment variable
+
+let cfenv = require('cfenv');
+
+// load local VCAP configuration  and service credentials
+
+let vcapLocal;
+try {
+
+  vcapLocal = require('./vcap-local.json');
+
+  console.log("Loaded local VCAP");
+
+} catch (e) { 
+
+    // console.log(e)
+}
+
+
+
+const appEnvOpts = vcapLocal ? { vcap: vcapLocal} : {}
+
+const appEnv = cfenv.getAppEnv(appEnvOpts);
+
+
+
+// Within the application environment (appenv) there's a services object
+
+let services = appEnv.services;
+
+
+
+// The services object is a map named by service so we extract the one for Redis
+
+let redis_services = services["compose-for-redis"];
+
+
+
+// This check ensures there is a services for Redis databases
+
+assert(!util.isUndefined(redis_services), "Must be bound to compose-for-redis services");
+
+
+
+// We now take the first bound Redis service and extract it's credentials object
+
+let credentials = redis_services[0].credentials;
+
+
+
+let connectionString = credentials.uri;
+
+
+
+let client = null;
+
+
+
+if (connectionString.startsWith("rediss://")) {
+
+    // If this is a rediss: connection, we have some other steps.
+
+    client = redis.createClient(connectionString, {
+
+        tls: { servername: new URL(connectionString).hostname }
+
+		});
+		
+		console.log("redis has started");
+
+    // This will, with node-redis 2.8, emit an error:
+
+    // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
+
+    // This is a bogus message and should be fixed in a later release of the package.
+
+} else {
+
+		client = redis.createClient(connectionString);
+
+}
+
+
+
+client.on("error", function(err) {
+
+    console.log("Error " + err);
+
+});
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
-
 
 
 /**
