@@ -24,33 +24,10 @@ const logger = require('./log.js')
 const redis = require("redis");
 
 let client = null;
-var connectionString ="rediss://admin:FGBCTXAZKKXSVTSF@sl-eu-gb-p01.dblayer.com:16537";
 
+var connectionString ="rediss://admin:FGBCTXAZKKXSVTSF@portal536-35.bmix-eu-gb-yp-609c3314-7f95-4a7d-bf71-274519bd8553.2776438729.composedb.com:16537";
 
-if (connectionString.startsWith("rediss://")) {
-
-    // If this is a rediss: connection, we have some other steps.
-
-    client = redis.createClient(connectionString, {
-
-        tls: { servername: new URL(connectionString).hostname }
-
-		});
-		
-		console.log("redis has started");
-
-    // This will, with node-redis 2.8, emit an error:
-
-    // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
-
-    // This is a bogus message and should be fixed in a later release of the package.
-
-} else {
-
-		client = redis.createClient(connectionString);
-
-}
-
+client = redis.createClient(connectionString);
 
 
 client.on("error", function(err) {
@@ -58,6 +35,8 @@ client.on("error", function(err) {
     console.log("Error " + err);
 
 });
+
+
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 
