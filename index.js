@@ -27,6 +27,17 @@ const cfenv = require('cfenv');
 const redisObject = (function() {
 
   var pub,sub,client,error;
+  var hashset = 'users';
+
+  function handleAll() {
+    return new Promise((err,resolve) => {
+      client.hgetall(hashset, (err, jsonReply) => {
+        console.log(`all users from redis ${JSON.stringify(jsonReply)}`)
+        resolve(JSON.stringify(jsonReply))
+      })
+    })
+  }
+
   return {
     'initRedis': function() {
       //TODO: logger
@@ -61,21 +72,25 @@ const redisObject = (function() {
       adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
     },
     'addUser': function(name, value) {
-      ret = client.set('name', value);
+      ret = client.hset(hashset, name, value);
       console.log(`adding user ${name} to redis. client obj: ${client}. ret ${ret}`)
       if(!client || error || !ret) {
         console.error("could not set key due to error or redis client being undefined")
       }
     },
-    'deleteUser': function() {
-
+    'deleteUser': function(name) {
+      client.hdel(hashset, name)
     },
     'exists': function(name) {
       console.log(`client obj: ${client}`);
-      ret = client.get(name, function(err,reply) {
+      ret = client.get(hashset, name, function(err,reply) {
         console.log(`redis_reply for key ${name}: ${reply}`);
       });
       console.log(`ret ${ret}`)
+    },
+    'getAll': async function() {
+      result = await handleAll();
+      return result;
     }
   }
 }())
@@ -645,7 +660,7 @@ function informUsers(name, answer,userInfo,socket){
   redisObject.addUser(name, socket.id);
 	userInfo.userOnline = name;
 	userInfo.hasRegistrated = true;
-	answer.users = users;
+	answer.users = JSON.parse(redisObject.getAll());
 	answer.success = true;
 	answer.selfName = name;
 	var newUser = {};

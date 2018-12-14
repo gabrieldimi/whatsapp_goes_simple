@@ -2,4 +2,4 @@
 applications:
 - name: hsrtcloudchat
   memory: 256M
-  instances: 2
+  instances: 1
