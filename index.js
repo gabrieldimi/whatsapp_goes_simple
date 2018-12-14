@@ -15,6 +15,7 @@ const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v
 const ibmdb = require('ibm_db');
 const express = require('express')
 const app = express();
+const { URL } = require("url");
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
