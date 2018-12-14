@@ -49,19 +49,21 @@ let credentials = redis_services[0].credentials;
 
 let connectionString = credentials.uri;
 
-let client = null;
+// let client = null;
 
 if (connectionString.startsWith("rediss://")) {
+		
+    io.adapter(redis({host: new URL(connectionString).hostname, port: 18955}));
+    // client = redis.createClient(connectionString, {
+    //     tls: { servername: new URL(connectionString).hostname }
+    // });
 
-    client = redis.createClient(connectionString, {
-        tls: { servername: new URL(connectionString).hostname }
-    });
 
-} else {
+}// else {
 
-    client = redis.createClient(connectionString);
+    // client = redis.createClient(connectionString);
 
-}
+// }
 
 client.on("error", function(err) {
 
