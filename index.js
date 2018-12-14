@@ -8,6 +8,7 @@
  * requiring modules
  */
 const fs = require("fs");
+const { URL } = require("url");
 const stream = require('stream');
 const sha256 = require('sha256');
 const request = require('request')
@@ -19,52 +20,48 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
+const redis = require("redis");
+const socketIoRedis = require('socket.io-redis');
+const cfenv = require('cfenv');
 
+function initRedis() {
+  const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
+  let services = appEnv.services;
 
-		// Then we'll pull in the database client library
+  let redis_services = services["compose-for-redis"];
 
-		const redis = require("redis");
-    global.redis = redis;
-		const socketIoRedis = require('socket.io-redis');
-    global.redisAdapter = socketIoRedis;
-		const { URL } = require("url");
+  let credentials = redis_services[0].credentials;
 
-		// Now lets get cfenv and ask it to parse the environment variable
+  let connectionString = credentials.uri;
 
-		let cfenv = require('cfenv');
+  let sub = null;
+  let pub = null;
 
-		const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
+  pub = redis.createClient(connectionString, {
+  	tls: { servername: new URL(connectionString).hostname }
+  });
 
-		// Within the application environment (appenv) there's a services object
+  sub = redis.createClient(connectionString, {
+  	tls: { servername: new URL(connectionString).hostname }
+  });
 
-		let services = appEnv.services;
+  adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
+}
 
-		// The services object is a map named by service so we extract the one for Redis
-
-		let redis_services = services["compose-for-redis"];
-
-		// We now take the first bound Redis service and extract it's credentials object
-
-		let credentials = redis_services[0].credentials;
-
-		let connectionString = credentials.uri;
-
-		let sub = null;
-		let pub = null;
-
-		pub = redis.createClient(connectionString, {
-				tls: { servername: new URL(connectionString).hostname }
-		});
-
-		sub = redis.createClient(connectionString, {
-			tls: { servername: new URL(connectionString).hostname }
-		});
-
-		global.adapter = adapter = io.adapter(socketIoRedis({pubClient: pub, subClient : sub }));
+function addToGlobal() {
+  global.redis = redis;
+  global.redisAdapter = socketIoRedis;
+  global.adapter = adapter;
+  global.gio = io;
+}
 
 
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
+logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
+
+initRedis();
+addToGlobal();
 
 
 /**
