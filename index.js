@@ -22,51 +22,51 @@ const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 
-// Then we'll pull in the database client library
-try{
-const redis = require("socket.io-redis");
+		// // Then we'll pull in the database client library
+		// try{
+		// const redis = require("socket.io-redis");
 
-// Now lets get cfenv and ask it to parse the environment variable
+		// // Now lets get cfenv and ask it to parse the environment variable
 
-let cfenv = require('cfenv');
+		// let cfenv = require('cfenv');
 
-const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
+		// const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
 
-console.log(process.env);
-console.log(appEnv);
+		// console.log(process.env);
+		// console.log(appEnv);
 
-// Within the application environment (appenv) there's a services object
+		// // Within the application environment (appenv) there's a services object
 
-let services = appEnv.services;
+		// let services = appEnv.services;
 
-// The services object is a map named by service so we extract the one for Redis
+		// // The services object is a map named by service so we extract the one for Redis
 
-let redis_services = services["compose-for-redis"];
+		// let redis_services = services["compose-for-redis"];
 
-// We now take the first bound Redis service and extract it's credentials object
+		// // We now take the first bound Redis service and extract it's credentials object
 
-let credentials = redis_services[0].credentials;
+		// let credentials = redis_services[0].credentials;
 
-let connectionString = credentials.uri;
+		// let connectionString = credentials.uri;
 
-//let client = null;
+		// //let client = null;
 
-if (connectionString.startsWith("rediss://")) {
-		
-    io.adapter(redis({host: new URL(connectionString).hostname, port: 18955}));
-    // client = redis.createClient(connectionString, {
-    //     tls: { servername: new URL(connectionString).hostname }
-    // });
+		// if (connectionString.startsWith("rediss://")) {
+				
+		// 		io.adapter(redis({host: new URL(connectionString).hostname, port: 18955}));
+		// 		// client = redis.createClient(connectionString, {
+		// 		//     tls: { servername: new URL(connectionString).hostname }
+		// 		// });
 
-}
-// } else {
+		// }
+		// // } else 
 
-//     client = redis.createClient(connectionString);
+		// //     client = redis.createClient(connectionString);
 
-// }
-}catch(er){
-	console.log(er);
-}
+		// // }
+		// }catch(er){
+		// 	console.log(er);
+		// }
 
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
