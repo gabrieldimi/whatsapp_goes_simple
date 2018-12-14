@@ -64,7 +64,8 @@ const redisObject = (function() {
       console.log(`adding user ${name} to redis`)
       if(!client || error || !client.set('name', value)) {
         console.error("could not set key due to error or redis client being undefined")
-      },
+      }
+    },
     'deleteUser': function() {
 
     },
