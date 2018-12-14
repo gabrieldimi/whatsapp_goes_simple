@@ -61,8 +61,9 @@ const redisObject = (function() {
       adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
     },
     'addUser': function(name, value) {
-      console.log(`adding user ${name} to redis`)
-      if(!client || error || !client.set('name', value)) {
+      ret = client.set('name', value);
+      console.log(`adding user ${name} to redis. client obj: ${client}. ret ${ret}`)
+      if(!client || error || !ret) {
         console.error("could not set key due to error or redis client being undefined")
       }
     },
@@ -70,9 +71,11 @@ const redisObject = (function() {
 
     },
     'exists': function(name) {
-      client.get(name, function(err,reply) {
+      console.log(`client obj: ${client}`);
+      ret = client.get(name, function(err,reply) {
         console.log(`redis_reply for key ${name}: ${reply}`);
       });
+      console.log(`ret ${ret}`)
     }
   }
 }())
