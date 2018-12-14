@@ -67,7 +67,7 @@ const redisObject = (function() {
         //TODO: logger
         console.error("could not set key due to error or redis client being undefined")
       }
-    }
+    },
     'deleteUser': function() {
 
     },
