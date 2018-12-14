@@ -33,11 +33,8 @@ const redisObject = (function() {
       console.log('INIT OF REDIS');
       const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
       let services = appEnv.services;
-
       let redis_services = services["compose-for-redis"];
-
       let credentials = redis_services[0].credentials;
-
       let connectionString = credentials.uri;
 
       pub = redis.createClient(connectionString, {
@@ -45,6 +42,10 @@ const redisObject = (function() {
       });
 
       sub = redis.createClient(connectionString, {
+      	tls: { servername: new URL(connectionString).hostname }
+      });
+
+      global.client = redis.createClient(connectionString, {
       	tls: { servername: new URL(connectionString).hostname }
       });
 
