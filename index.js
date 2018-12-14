@@ -22,7 +22,7 @@ const logger = require('./log.js')
 
 
 		// Then we'll pull in the database client library
-		
+
 		const redis = require("redis");
 		const socketIoRedis = require('socket.io-redis');
 		const { URL } = require("url");
@@ -57,8 +57,8 @@ const logger = require('./log.js')
 		sub = redis.createClient(connectionString, {
 			tls: { servername: new URL(connectionString).hostname }
 		});
-		
-		var adapter = io.adapter(socketIoRedis({pubClient: pub, subClient : sub }));
+
+		global.adapter = adapter = io.adapter(socketIoRedis({pubClient: pub, subClient : sub }));
 
 
 logger.debugLevel = 'error';
