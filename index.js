@@ -24,7 +24,7 @@ const logger = require('./log.js')
 
 // Then we'll pull in the database client library
 
-const redis = require("redis");
+const redis = require("socket.io-redis");
 
 // Now lets get cfenv and ask it to parse the environment variable
 
@@ -53,19 +53,9 @@ let client = null;
 
 if (connectionString.startsWith("rediss://")) {
 
-    // If this is a rediss: connection, we have some other steps.
-
     client = redis.createClient(connectionString, {
-
         tls: { servername: new URL(connectionString).hostname }
-
     });
-
-    // This will, with node-redis 2.8, emit an error:
-
-    // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
-
-    // This is a bogus message and should be fixed in a later release of the package.
 
 } else {
 
