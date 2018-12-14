@@ -26,7 +26,7 @@ const cfenv = require('cfenv');
 
 const redisObject = (function() {
 
-  var pub,sub,error;
+  var pub,sub,client,error;
   return {
     'initRedis': function() {
       //TODO: logger
@@ -45,7 +45,7 @@ const redisObject = (function() {
       	tls: { servername: new URL(connectionString).hostname }
       });
 
-      global.client = redis.createClient(connectionString, {
+      global.client = client = redis.createClient(connectionString, {
       	tls: { servername: new URL(connectionString).hostname }
       });
 
