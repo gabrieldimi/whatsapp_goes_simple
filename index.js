@@ -25,26 +25,31 @@ const socketIoRedis = require('socket.io-redis');
 const cfenv = require('cfenv');
 
 const redisObject = (function() {
+  var vcapLocal;
+  try {
+  vcap = fs.readFileSync("vcaplocal.json");
+  vcapLocal = JSON.parse(vcap)
+  console.log("Loaded local VCAP");
+  } catch (e) {
+    // console.log(e)
+  }
 
   var pub,sub,client,error;
   var hashset = 'users';
-
-  function handleAll() {
-    return new Promise((err,resolve) => {
-      client.hgetall(hashset, (err, jsonReply) => {
-        console.log(`all users from redis ${JSON.stringify(jsonReply)}`)
-        resolve(JSON.stringify(jsonReply))
-      })
-    })
-  }
 
   return {
     'initRedis': function() {
       //TODO: logger
       console.log('INIT OF REDIS');
+      let services;
+      let redis_services;
+      if(vcapLocal) {
+        redis_services = vcapLocal["compose-for-redis"]
+      } else {
       const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
-      let services = appEnv.services;
-      let redis_services = services["compose-for-redis"];
+      services = appEnv.services;
+      redis_services = services["compose-for-redis"];
+      }
       let credentials = redis_services[0].credentials;
       let connectionString = credentials.uri;
 
@@ -73,7 +78,7 @@ const redisObject = (function() {
     },
     'addUser': function(name, value) {
       ret = client.hset(hashset, name, value);
-      console.log(`adding user ${name} to redis. client obj: ${client}. ret ${ret}`)
+      console.log(`adding user ${name} to redis. ret ${ret}`)
       if(!client || error || !ret) {
         console.error("could not set key due to error or redis client being undefined")
       }
@@ -82,15 +87,21 @@ const redisObject = (function() {
       client.hdel(hashset, name)
     },
     'exists': function(name) {
-      console.log(`client obj: ${client}`);
-      ret = client.get(hashset, name, function(err,reply) {
-        console.log(`redis_reply for key ${name}: ${reply}`);
+      return new Promise(function(resolve, reject) {
+        ret = client.hget(hashset, name, function(err,reply) {
+          console.log(`redis_reply for key ${name}: ${reply}`);
+          resolve(reply !== null)
+        });
+        console.log(`ret ${ret}`)
       });
-      console.log(`ret ${ret}`)
     },
-    'getAll': async function() {
-      result = await handleAll();
-      return result;
+    'getAll': function() {
+      return new Promise(function(resolve, reject) {
+        client.hgetall(hashset, (err, jsonReply) => {
+          console.log(`all users from redis ${JSON.stringify(jsonReply)}`)
+          resolve(JSON.stringify(jsonReply))
+        })
+      })
     }
   }
 }())
@@ -136,7 +147,7 @@ let port = process.env.PORT || 3000;
 /**
  * key-value user database to keep track of active users
  */
-var users = {};
+// var users = {};
 var databaseConnection;
 //synchronously
 connectToDB();
@@ -222,7 +233,8 @@ function handleDisconnect(hasRegistrated, userOnline, socket) {
 	if (hasRegistrated) {
 		socket.broadcast.emit("userisgone",userOnline);
 		// users can now register and then login. Now this is only used for active users
-		delete users[userOnline];
+		// delete users[userOnline];
+    redisObject.deleteUser(userOnline);
 		logger.log('info', userOnline + ' has been deleted from active users. But not from database');
 	}
 	logger.log('info', `${userOnline} disconnected`);
@@ -385,7 +397,7 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 					logger.log('info', name + ' is registered');
 					var additionResult = addUserToDB(name,passwordHash);
 					logger.log("info", "result of adding user:",additionResult);
-					informUsers(name,answer,userInfo,socket);
+					await informUsers(name,answer,userInfo,socket);
 					answer.msg = `Welcome ${name}`;
 				} else {
 					logger.log('info', 'user name: ' + name + ' already exists');
@@ -421,10 +433,11 @@ async function handleLogin(loginData, userInfo, socket){
 	// logger.log("info",`password plain text = ${loginData.password}`);
 	logger.log("warn",`passwordHash by login= '${passwordHash}'`);
 	var queryResult = await doUserCredentialsFit(name,passwordHash);
-	if(!users[name]){
+  var exists = await redisObject.exists(name);
+	if(!exists){
 		if(queryResult){
 			logger.log('info',`user ${queryResult.USERID} knows his password`);
-			informUsers(queryResult.USERID,answer,userInfo,socket);
+			await informUsers(queryResult.USERID,answer,userInfo,socket);
 			answer.msg = `Welcome back, ${queryResult.USERID}`;
 		}else{
 			logger.log('info',"either user name or password doesn't match");
@@ -653,14 +666,16 @@ function doUserCredentialsFit(userName,passwordHash){
  * @param {JSON} userInfo
  * @param {OBJECT} socket
  */
-function informUsers(name, answer,userInfo,socket){
-	var pair = {};
-	users[name] = pair;
-	pair.connection = socket.id;
+async function informUsers(name, answer,userInfo,socket) {
+	// var pair = {};
+	// users[name] = pair;
+	// pair.connection = socket.id;
   redisObject.addUser(name, socket.id);
 	userInfo.userOnline = name;
 	userInfo.hasRegistrated = true;
-	answer.users = JSON.parse(redisObject.getAll());
+  var all = await redisObject.getAll();
+  console.log(`ALL users from redis ${all}`);
+	answer.users = JSON.parse(all);
 	answer.success = true;
 	answer.selfName = name;
 	var newUser = {};

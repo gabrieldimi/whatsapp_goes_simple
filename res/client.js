@@ -555,6 +555,7 @@ $(function() {
 			Implementation for handleLoginStatus and handleRegistrationStatus
 		*/
 		function handleLogin(obj) {
+      console.log(`Login: ${JSON.stringify(obj)}, raw: ${obj}`)
 			$('#loadingOverlay').css('display', 'none');
 			if (obj.success) {
 				selfName = obj.selfName;
@@ -564,7 +565,7 @@ $(function() {
 					for ( var key in obj.users) {
 						if (key != selfName && !hashmap[key]) {
 							console.log("adding:", key)
-							addUser(key, obj.users[key].connection); // TODO: connection bad name server should not send selfName, obj bad name
+							addUser(key, obj.users[key].connection ? obj.users[key].connection : obj.users[key]); // TODO: connection bad name server should not send selfName, obj bad name
 						}
 					}
 					$("#tabs").tabs("refresh");
