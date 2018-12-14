@@ -24,7 +24,9 @@ const logger = require('./log.js')
 		// Then we'll pull in the database client library
 
 		const redis = require("redis");
+    global.redis = redis;
 		const socketIoRedis = require('socket.io-redis');
+    global.redisAdapter = socketIoRedis;
 		const { URL } = require("url");
 
 		// Now lets get cfenv and ask it to parse the environment variable
