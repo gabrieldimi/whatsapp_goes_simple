@@ -64,8 +64,8 @@ if (connectionString.startsWith("rediss://")) {
 //     client = redis.createClient(connectionString);
 
 // }
-}catch(err){
-	console.log(err);
+}catch(er){
+	console.log(er);
 }
 
 logger.debugLevel = 'error';
