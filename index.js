@@ -9,7 +9,7 @@
  */
 const fs = require("fs");
 const { URL } = require("url");
-const stream = require('stream');
+//const stream = require('stream');
 const sha256 = require('sha256');
 const request = require('request')
 const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
@@ -62,18 +62,14 @@ const redisObject = (function() {
     },
     'addUser': function(name, value) {
       console.log(`adding user ${name} to redis`)
-      if(pub && !error) {
-        pub.set('name', value);
-      } else {
-        //TODO: logger
+      if(!client || error || !client.set('name', value)) {
         console.error("could not set key due to error or redis client being undefined")
-      }
-    },
+      },
     'deleteUser': function() {
 
     },
     'exists': function(name) {
-      pub.get(name, function(err,reply) {
+      client.get(name, function(err,reply) {
         console.log(`redis_reply for key ${name}: ${reply}`);
       });
     }
