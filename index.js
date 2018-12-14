@@ -15,58 +15,51 @@ const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v
 const ibmdb = require('ibm_db');
 const express = require('express')
 const app = express();
-const { URL } = require("url");
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 
-		// // Then we'll pull in the database client library
-		// try{
-		// const redis = require("socket.io-redis");
+		// Then we'll pull in the database client library
+		
+		const redis = require("redis");
+		const socketIoRedis = require('socket.io-redis');
+		const { URL } = require("url");
 
-		// // Now lets get cfenv and ask it to parse the environment variable
+		// Now lets get cfenv and ask it to parse the environment variable
 
-		// let cfenv = require('cfenv');
+		let cfenv = require('cfenv');
 
-		// const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
+		const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
 
-		// console.log(process.env);
-		// console.log(appEnv);
+		// Within the application environment (appenv) there's a services object
 
-		// // Within the application environment (appenv) there's a services object
+		let services = appEnv.services;
 
-		// let services = appEnv.services;
+		// The services object is a map named by service so we extract the one for Redis
 
-		// // The services object is a map named by service so we extract the one for Redis
+		let redis_services = services["compose-for-redis"];
 
-		// let redis_services = services["compose-for-redis"];
+		// We now take the first bound Redis service and extract it's credentials object
 
-		// // We now take the first bound Redis service and extract it's credentials object
+		let credentials = redis_services[0].credentials;
 
-		// let credentials = redis_services[0].credentials;
+		let connectionString = credentials.uri;
 
-		// let connectionString = credentials.uri;
+		let sub = null;
+		let pub = null;
 
-		// //let client = null;
+		pub = redis.createClient(connectionString, {
+				tls: { servername: new URL(connectionString).hostname }
+		});
 
-		// if (connectionString.startsWith("rediss://")) {
-				
-		// 		io.adapter(redis({host: new URL(connectionString).hostname, port: 18955}));
-		// 		// client = redis.createClient(connectionString, {
-		// 		//     tls: { servername: new URL(connectionString).hostname }
-		// 		// });
+		sub = redis.createClient(connectionString, {
+			tls: { servername: new URL(connectionString).hostname }
+		});
+		
+		var adapter = io.adapter(socketIoRedis({pubClient: pub, subClient : sub }));
 
-		// }
-		// // } else 
-
-		// //     client = redis.createClient(connectionString);
-
-		// // }
-		// }catch(er){
-		// 	console.log(er);
-		// }
 
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
