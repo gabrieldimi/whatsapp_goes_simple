@@ -21,11 +21,34 @@ const ss = require('socket.io-stream');
 const logger = require('./log.js')
 
 
+// Then we'll pull in the database client library
+
 const redis = require("redis");
 
-let client = null;
-var connectionString ="rediss://admin:FGBCTXAZKKXSVTSF@sl-eu-gb-p01.dblayer.com:16537";
+// Now lets get cfenv and ask it to parse the environment variable
 
+let cfenv = require('cfenv');
+
+const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
+
+console.log(process.env);
+console.log(appEnv);
+
+// Within the application environment (appenv) there's a services object
+
+let services = appEnv.services;
+
+// The services object is a map named by service so we extract the one for Redis
+
+let redis_services = services["compose-for-redis"];
+
+// We now take the first bound Redis service and extract it's credentials object
+
+let credentials = redis_services[0].credentials;
+
+let connectionString = credentials.uri;
+
+let client = null;
 
 if (connectionString.startsWith("rediss://")) {
 
@@ -33,20 +56,21 @@ if (connectionString.startsWith("rediss://")) {
 
     client = redis.createClient(connectionString, {
 
-        tls: { servername: new URL(connectionString).hostname, ca: [new Buffer('LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURsVENDQW4yZ0F3SUJBZ0lFWEJMZ2FUQU5CZ2txaGtpRzl3MEJBUTBGQURCTU1Vb3dTQVlEVlFRRERFRTUKWkdWaE56TXpaV1kwWXpVMFpXWTJZVFJoWlRVelpERmhOMk0zTURNd1pTMHpOVE5qTTJGbU5XSmtNekF3WkRJegpOelk0WldNMFlXTTNNekE1Tm1ZMU1qQWVGdzB4T0RFeU1UTXlNalF5TkRsYUZ3MHpPREV5TVRNeU1qQXdNREJhCk1Fd3hTakJJQmdOVkJBTU1RVGxrWldFM016TmxaalJqTlRSbFpqWmhOR0ZsTlROa01XRTNZemN3TXpCbExUTTEKTTJNellXWTFZbVF6TURCa01qTTNOamhsWXpSaFl6Y3pNRGsyWmpVeU1JSUJJakFOQmdrcWhraUc5dzBCQVFFRgpBQU9DQVE4QU1JSUJDZ0tDQVFFQXNnYlFHemY1QmxNU01MWm42SnZMek1nMkE1ZzlpNWd2akJnTHExMGxwbTZaCm1HVGtXamF0Q2xoelllRFJ3VTdqbmtRaXhPOGFxZ2dKZUJBVEZmWkwzU0hCQWlDQW1lMTBnd2poRXRSOFozek0KOXlJLzNJVC9NbTJTVWtibm9yY0x3a1Q1amlIOHB6M0xJTy9GOXFuUFpXZFRncGF3ZmYvRjU4ZHpRVENaK1NUdwphcEQxeCtORTM0cG5JaEJINWIwS3M5SjFmWU9aNWJOaWRYckJOb1FMblpYTktFdEZBdXc5VUxzdFJwcTY2YWh4CmxraE4wcU00UUtDaEw2T0hCL0ZzZVNOZVJkamN3a1d4T1E4YURHWUdkTFF2eHcxandvUTdUM0xROUo0NDhTYjUKZFhybTFNYXIxVWgyemMxc24rNkVPK1VicVYzQ1RKaVZwMUFlemVNMEJRSURBUUFCbzM4d2ZUQWRCZ05WSFE0RQpGZ1FVbUN6aDU3NnMwYys3bFBqdHhJcjNHWitZZFZrd0RnWURWUjBQQVFIL0JBUURBZ0lFTUIwR0ExVWRKUVFXCk1CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFNQmdOVkhSTUVCVEFEQVFIL01COEdBMVVkSXdRWU1CYUEKRkpnczRlZStyTkhQdTVUNDdjU0s5eG1mbUhWWk1BMEdDU3FHU0liM0RRRUJEUVVBQTRJQkFRQnQwd25PWjNKOAo2SXgxK0J3cFg0VUN5RXpPTUZ4WmlHWkFCejdpVW9FNnQ2Slo4ZGZyaGtTNVl3NWpLLzUwTUZoTE9IV21lKytCCitmbXhEbVVtbkQ4Y2lEY0dmTlFON3dFZlJlODZIcE9GTTNMSE1pby9HOGpGbmREMmJkZE9aSVU3WjNZYmFOeVIKNUNsQ2FzWWJjcDNuQWhtQzRFMjZkY25rZjZWd1U2ZlVsaEJaMi82dHE2cXF5N2JFUXcrZG9jVWU0Q0EzdGF3cApQTlY2ZTh3VWt1Ky9jZlNpU0JFM2JINWd0MGtSNzRjaURlb0VWSlRVd0FGR3NDVDJKc0tXM041M1R4TCttYllBCkdhaWdMdVZvbVZkZlltQlBjQW9pM1diVlBBa2JQb3daMkVHRzZrUzBNVmJQeHkrNTRXeE1jakc1Rm52RVZiRHQKWnVvelQvWk96K3dSCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K', 'base64')]}
+        tls: { servername: new URL(connectionString).hostname }
 
-		});
+    });
 
-		console.log("redis has started");
+    // This will, with node-redis 2.8, emit an error:
+
+    // "node_redis: WARNING: You passed "rediss" as protocol instead of the "redis" protocol!"
+
+    // This is a bogus message and should be fixed in a later release of the package.
 
 } else {
 
-		client = redis.createClient(connectionString);
+    client = redis.createClient(connectionString);
 
 }
-
-console.log(client);
-console.log(process.env);
 
 client.on("error", function(err) {
 
