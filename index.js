@@ -639,7 +639,7 @@ function informUsers(name, answer,userInfo,socket){
 	var pair = {};
 	users[name] = pair;
 	pair.connection = socket.id;
-  redisObject.addUser(name, pair);
+  redisObject.addUser(name, socket.id);
 	userInfo.userOnline = name;
 	userInfo.hasRegistrated = true;
 	answer.users = users;
