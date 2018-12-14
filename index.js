@@ -23,7 +23,7 @@ const logger = require('./log.js')
 
 
 // Then we'll pull in the database client library
-
+try{
 const redis = require("socket.io-redis");
 
 // Now lets get cfenv and ask it to parse the environment variable
@@ -49,7 +49,7 @@ let credentials = redis_services[0].credentials;
 
 let connectionString = credentials.uri;
 
-// let client = null;
+//let client = null;
 
 if (connectionString.startsWith("rediss://")) {
 		
@@ -58,19 +58,15 @@ if (connectionString.startsWith("rediss://")) {
     //     tls: { servername: new URL(connectionString).hostname }
     // });
 
+}
+// } else {
 
-}// else {
-
-    // client = redis.createClient(connectionString);
+//     client = redis.createClient(connectionString);
 
 // }
-
-client.on("error", function(err) {
-
-    console.log("Error " + err);
-
-});
-
+}catch(err){
+	console.log(err);
+}
 
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
