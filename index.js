@@ -24,35 +24,67 @@ const redis = require("redis");
 const socketIoRedis = require('socket.io-redis');
 const cfenv = require('cfenv');
 
-function initRedis() {
-  const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
-  let services = appEnv.services;
+const redisObject = (function() {
 
-  let redis_services = services["compose-for-redis"];
+  var pub,sub,error;
+  return {
+    'initRedis': function() {
+      //TODO: logger
+      console.log('INIT OF REDIS');
+      const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
+      let services = appEnv.services;
 
-  let credentials = redis_services[0].credentials;
+      let redis_services = services["compose-for-redis"];
 
-  let connectionString = credentials.uri;
+      let credentials = redis_services[0].credentials;
 
-  let sub = null;
-  let pub = null;
+      let connectionString = credentials.uri;
 
-  pub = redis.createClient(connectionString, {
-  	tls: { servername: new URL(connectionString).hostname }
-  });
+      pub = redis.createClient(connectionString, {
+      	tls: { servername: new URL(connectionString).hostname }
+      });
 
-  sub = redis.createClient(connectionString, {
-  	tls: { servername: new URL(connectionString).hostname }
-  });
+      sub = redis.createClient(connectionString, {
+      	tls: { servername: new URL(connectionString).hostname }
+      });
 
-  adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
-}
+      pub.on("error", function (err) {
+        console.log("Error " + err);
+        error = err;
+      });
+
+      sub.on("error", function (err) {
+        console.log("Error " + err);
+      });
+
+      adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
+    },
+    'addUser': function(name, value) {
+      console.log(`adding user ${name} to redis`)
+      if(pub && !error) {
+        pub.set('name', value);
+      } else {
+        //TODO: logger
+        console.error("could not set key due to error or redis client being undefined")
+      }
+    }
+    'deleteUser': function() {
+
+    },
+    'exists': function(name) {
+      pub.get(name, function(err,reply) {
+        console.log(`redis_reply for key ${name}: ${reply}`);
+      });
+    }
+  }
+}())
 
 function addToGlobal() {
   global.redis = redis;
   global.redisAdapter = socketIoRedis;
   global.adapter = adapter;
   global.gio = io;
+  global.redisObject = redisObject;
 }
 
 
@@ -60,7 +92,7 @@ logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
 
-initRedis();
+redisObject.initRedis();
 addToGlobal();
 
 
@@ -609,6 +641,7 @@ function informUsers(name, answer,userInfo,socket){
 	var pair = {};
 	users[name] = pair;
 	pair.connection = socket.id;
+  redisObject.addUser(name, pair);
 	userInfo.userOnline = name;
 	userInfo.hasRegistrated = true;
 	answer.users = users;
