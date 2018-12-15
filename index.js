@@ -74,6 +74,10 @@ const redisObject = (function() {
         console.log("Error " + err);
       });
 
+      client.on("error", function (err) {
+        console.log("Error " + err);
+      });
+
       adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
     },
     'addUser': function(name, value) {

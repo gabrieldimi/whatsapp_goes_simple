@@ -1,0 +1,6 @@
+todo: socket.io cant handle multiple instances by default needs session handling
+todo: services need to be bound to connect to them safely using env variables
+	done: watson, redis
+	todo: ibmdb
+todo: using bcrypt 
+todo: fix random connection reset to redis. maybe different version of redis?
