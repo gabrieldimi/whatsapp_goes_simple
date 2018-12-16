@@ -389,7 +389,7 @@ io.on('connection', function(socket) {
 	socket.on('privateUpload', (data, filename) => handlePrivateUpload(data, filename))
 	socket.on('upload', (filename) => handleUpload(filename, socket, userInfo.userOnline))
 	ss(socket).on('sendingbinary', (incomingStream, data, idReceiver) => handleSendingBinary(incomingStream, data,socket, idReceiver, userInfo.userOnline));
-
+  socket.emit('instance', process.env.CF_INSTANCE_INDEX)
 });
 
 /**
