@@ -36,7 +36,7 @@ module.exports = (function () {
 
         app.get('/', function(req, res) {
         	logger.log('info', "Client IP: " + req.connection.remoteAddress)
-          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline' media-src 'self' blob:");
+          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline'; media-src 'self' blob:");
           res.setHeader('X-Content-Type-Options', 'nosniff');
           res.setHeader('X-XSS-Protection', '1');
           res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
@@ -45,7 +45,7 @@ module.exports = (function () {
 
         app.get('/weblogger', function(req,res) {
         	logger.log('info', "weblogger accessed");
-          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io script-src 'self' style-src 'self'")
+          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io; script-src 'self'; style-src 'self'")
           res.setHeader('X-Content-Type-Options', 'nosniff');
           res.setHeader('X-XSS-Protection', '1');
           res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
