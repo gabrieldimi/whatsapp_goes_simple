@@ -4,3 +4,5 @@ todo: services need to be bound to connect to them safely using env variables
 	todo: ibmdb
 todo: using bcrypt 
 todo: fix random connection reset to redis. maybe different version of redis?
+todo: dropzone multiple fils
+todo: make login appear first

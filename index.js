@@ -9,7 +9,8 @@
  */
 const fs = require("fs");
 const { URL } = require("url");
-//const stream = require('stream');
+const cookieParser = require('cookie-parser')
+const Session = require('express-session')
 const sha256 = require('sha256');
 const request = require('request')
 const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
@@ -23,6 +24,7 @@ const logger = require('./log.js')
 const redis = require("redis");
 const socketIoRedis = require('socket.io-redis');
 const cfenv = require('cfenv');
+const RedisStore = require('connect-redis')(Session)
 
 const redisObject = (function() {
   var vcapLocal;
@@ -34,7 +36,7 @@ const redisObject = (function() {
     // console.log(e)
   }
 
-  var pub,sub,client,error;
+  var pub,sub,client;
   var hashset = 'users';
 
   return {
@@ -53,29 +55,32 @@ const redisObject = (function() {
       let credentials = redis_services[0].credentials;
       let connectionString = credentials.uri;
 
-      pub = redis.createClient(connectionString, {
-      	tls: { servername: new URL(connectionString).hostname }
-      });
+      let redisParams = {
+        tls: { servername: new URL(connectionString).hostname },
+        retry_strategy: function(options) {
+          if(options.error.code === 'ECONNRESET') {
+            console.log('DO NOT THROW')
+          }
+        }
+      }
 
-      sub = redis.createClient(connectionString, {
-      	tls: { servername: new URL(connectionString).hostname }
-      });
-
-      global.client = client = redis.createClient(connectionString, {
-      	tls: { servername: new URL(connectionString).hostname }
-      });
+      pub = redis.createClient(connectionString, redisParams);
+      sub = redis.createClient(connectionString, redisParams);
+      global.client = client = redis.createClient(connectionString, redisParams);
 
       pub.on("error", function (err) {
         console.log("Error " + err);
-        error = err;
+        logger.log('info', 'reconnecting pub')
       });
 
       sub.on("error", function (err) {
         console.log("Error " + err);
+        logger.log('info', 'reconnecting sub')
       });
 
       client.on("error", function (err) {
         console.log("Error " + err);
+        logger.log('info', 'reconnecting client')
       });
 
       adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
@@ -83,7 +88,7 @@ const redisObject = (function() {
     'addUser': function(name, value) {
       ret = client.hset(hashset, name, value);
       console.log(`adding user ${name} to redis. ret ${ret}`)
-      if(!client || error || !ret) {
+      if(!client || !ret) {
         console.error("could not set key due to error or redis client being undefined")
       }
     },
@@ -106,6 +111,9 @@ const redisObject = (function() {
           resolve(JSON.stringify(jsonReply))
         })
       })
+    },
+    'getClient': function() {
+      return client;
     }
   }
 }())
@@ -126,6 +134,18 @@ logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
 redisObject.initRedis();
 addToGlobal();
 
+app.enable('trust proxy');
+app.set('trust proxy', 1)
+var session = Session({
+  store: new RedisStore({client: redisObject.getClient()}),
+  secret: 'mysecret',
+  name: 'JSESSIONID',
+  resave: true,
+  saveUninitialized: true
+})
+/*Making sure that load balancing doesnt interfere with socket.io*/
+app.use(cookieParser())
+app.use(session)
 
 /**
  * add folders to virtual namespace
@@ -133,7 +153,6 @@ addToGlobal();
 app.use(express.static('icons'));
 app.use(express.static('res'));
 
-app.enable('trust proxy');
 //Enforcing HTTPS, redirects visitor to https if no https has been specified
 app.use (function (req, res, next) {
   if (req.secure || process.env.BLUEMIX_REGION === undefined) {
@@ -143,6 +162,28 @@ app.use (function (req, res, next) {
     res.redirect('https://' + req.headers.host + req.url);
   }
 });
+
+
+app.get('/', function(req, res) {
+	logger.log('info', "Client IP: " + req.connection.remoteAddress)
+  res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline' blob://");
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+	res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/weblogger', function(req,res) {
+	logger.log('info', "weblogger accessed");
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+	res.sendFile(__dirname + '/weblogger.html')
+});
+
+app.get('/favicon.gif', (req,res) => {
+  res.sendFile(__dirname + '/favicon.gif')
+})
 
 /**
  * handle port on ibmcloud and stay compatible for local development
@@ -457,27 +498,6 @@ async function handleLogin(loginData, userInfo, socket){
 
 	socket.emit('loginStatus',answer);
 }
-
-app.get('/', function(req, res) {
-	logger.log('info', "Client IP: " + req.connection.remoteAddress)
-  //res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline'");
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-	res.sendFile(__dirname + '/index.html');
-});
-
-app.get('/weblogger', function(req,res) {
-	logger.log('info', "weblogger accessed");
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-	res.sendFile(__dirname + '/weblogger.html')
-});
-
-app.get('/favicon.gif', (req,res) => {
-  res.sendFile(__dirname + '/favicon.gif')
-})
 
 var socketWeblogger = io.of('/weblogger');
 socketWeblogger.on('connection',function(socket) {
