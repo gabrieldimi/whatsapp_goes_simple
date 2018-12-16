@@ -37,7 +37,7 @@ logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
 redisObject.initRedis(io);
 addToGlobal();
 
-app.init(express,expressApp,redisObject.getClient())
+app.init(express,expressApp,redisObject.getClient(), logger)
 
 /**
  * handle port on ibmcloud and stay compatible for local development

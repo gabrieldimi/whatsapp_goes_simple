@@ -3,7 +3,7 @@ module.exports = (function () {
   const Session = require('express-session')
   const RedisStore = require('connect-redis')(Session)
   return {
-        'init': function(express,app,storeClient) {
+        'init': function(express, app, storeClient, logger) {
         app.enable('trust proxy');
         app.set('trust proxy', 1)
         var session = Session({
