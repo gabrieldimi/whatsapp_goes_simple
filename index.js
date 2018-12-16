@@ -166,7 +166,7 @@ app.use (function (req, res, next) {
 
 app.get('/', function(req, res) {
 	logger.log('info', "Client IP: " + req.connection.remoteAddress)
-  res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline' blob://");
+  res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline' media-src 'self' blob:");
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-XSS-Protection', '1');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
@@ -175,6 +175,7 @@ app.get('/', function(req, res) {
 
 app.get('/weblogger', function(req,res) {
 	logger.log('info', "weblogger accessed");
+  res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io")
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-XSS-Protection', '1');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
