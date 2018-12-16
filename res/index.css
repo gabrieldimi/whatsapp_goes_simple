@@ -243,6 +243,10 @@ float:left;
 	font-size: 48pt;
 }
 
+.lower {
+	clear:left;
+}
+
 /*JQUERY-UI tabs*/
 #tabs {
 	height: 90%;

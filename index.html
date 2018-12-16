@@ -51,7 +51,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 												<input id="regInput" class="regField" type="text" placeholder="Enter username" pattern="(?!^Global$)(?!^.* $)\w[ \w]*" required>
 												<input id="passwd" class="regField" type="password" autocomplete="off" placeholder="Enter password" pattern="(?:(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*\W)).{8,}" required>
 												<div style="width:90%;margin: auto;text-align: left;">
-														<img id="profilePreview" src="profile-256.jpg" style="float: left;">
+														<img id="profilePreview" src="profile-256.jpg" alt='profile picture template' style="float: left;">
 														<div>
 																<span>Upload profile picture</span>
 																<input id="profilePicker" type="file" accept="image/*">
@@ -63,7 +63,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 												<input id="submitBtn" class="submitBtns" type="submit" value="submit" style="display: none;">
 										</form>
 										<div id="regLabel">Registration</div>
-										<div id="lower" style="clear:left;">
+										<div class="lower">
 												<a href="javascript:void(0)" id="toLogin" class="pseudoLink">Already registered? Click here to get to the login screen</a>
 												<div id='errorMessage'></div>
 										</div>
@@ -76,7 +76,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 												<input id="submitBtnLogin" class="submitBtns" type="submit" value="submit">
 										</form>
 										<div id="regLabel">Login</div>
-										<div id="lower" style="clear:left;">
+										<div clas="lower">
 												<a href="javascript:void(0)" id="toRegistration" class="pseudoLink">Not registered yet? Click here to get to the registration screen</a>
 												<div id='errorMessage'></div>
 										</div>
@@ -86,7 +86,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 		</table>
 		<div id="videoOverlay" style="display:none; position: fixed; width: 100%; height:100%; z-index:1000; top: 0">
 				<div style="margin:auto; text-align:center;">
-						<video autoplay="true" id="webcamPreview" style="display: block; margin: auto;background: url(profile-256.jpg)"></video>
+						<video id="webcamPreview" style="display: block; margin: auto;background: url(profile-256.jpg)" autoplay></video>
 						<button id="takeSnapshot">take snap</button>
 						<button id="stopWebcam">Stop</button>
 				</div>
@@ -99,7 +99,7 @@ Contributors: Gabriel Dimitrov, Julian Leuze
 										<h1 id="loadingText" style='text-align:center'>Loading...</h1>
 								</span>
 						</span>
-				<div>
+				</div>
 		</div>
 </body>
 </html>
