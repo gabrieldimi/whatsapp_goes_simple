@@ -9,118 +9,22 @@
  */
 const fs = require("fs");
 const { URL } = require("url");
-const cookieParser = require('cookie-parser')
-const Session = require('express-session')
 const sha256 = require('sha256');
 const request = require('request')
 const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
 const ibmdb = require('ibm_db');
 const express = require('express')
-const app = express();
-const http = require('http').Server(app);
+const expressApp = express();
+const http = require('http').Server(expressApp);
+const app = require('./app.js')
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
-const redis = require("redis");
-const socketIoRedis = require('socket.io-redis');
-const cfenv = require('cfenv');
-const RedisStore = require('connect-redis')(Session)
-
-const redisObject = (function() {
-  var vcapLocal;
-  try {
-  vcap = fs.readFileSync("vcaplocal.json");
-  vcapLocal = JSON.parse(vcap)
-  console.log("Loaded local VCAP");
-  } catch (e) {
-    // console.log(e)
-  }
-
-  var pub,sub,client;
-  var hashset = 'users';
-
-  return {
-    'initRedis': function() {
-      //TODO: logger
-      console.log('INIT OF REDIS');
-      let services;
-      let redis_services;
-      if(vcapLocal) {
-        redis_services = vcapLocal["compose-for-redis"]
-      } else {
-      const appEnv = cfenv.getAppEnv(process.env.VCAP_SERVICES);
-      services = appEnv.services;
-      redis_services = services["compose-for-redis"];
-      }
-      let credentials = redis_services[0].credentials;
-      let connectionString = credentials.uri;
-
-      let redisParams = {
-        tls: { servername: new URL(connectionString).hostname },
-        retry_strategy: function(options) {
-          if(options.error.code === 'ECONNRESET') {
-            console.log('DO NOT THROW')
-          }
-        }
-      }
-
-      pub = redis.createClient(connectionString, redisParams);
-      sub = redis.createClient(connectionString, redisParams);
-      global.client = client = redis.createClient(connectionString, redisParams);
-
-      pub.on("error", function (err) {
-        console.log("Error " + err);
-        logger.log('info', 'reconnecting pub')
-      });
-
-      sub.on("error", function (err) {
-        console.log("Error " + err);
-        logger.log('info', 'reconnecting sub')
-      });
-
-      client.on("error", function (err) {
-        console.log("Error " + err);
-        logger.log('info', 'reconnecting client')
-      });
-
-      adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
-    },
-    'addUser': function(name, value) {
-      ret = client.hset(hashset, name, value);
-      console.log(`adding user ${name} to redis. ret ${ret}`)
-      if(!client || !ret) {
-        console.error("could not set key due to error or redis client being undefined")
-      }
-    },
-    'deleteUser': function(name) {
-      client.hdel(hashset, name)
-    },
-    'exists': function(name) {
-      return new Promise(function(resolve, reject) {
-        ret = client.hget(hashset, name, function(err,reply) {
-          console.log(`redis_reply for key ${name}: ${reply}`);
-          resolve(reply !== null)
-        });
-        console.log(`ret ${ret}`)
-      });
-    },
-    'getAll': function() {
-      return new Promise(function(resolve, reject) {
-        client.hgetall(hashset, (err, jsonReply) => {
-          console.log(`all users from redis ${JSON.stringify(jsonReply)}`)
-          resolve(JSON.stringify(jsonReply))
-        })
-      })
-    },
-    'getClient': function() {
-      return client;
-    }
-  }
-}())
+const redisObject = require('./redisAccess.js')
 
 function addToGlobal() {
-  global.redis = redis;
-  global.redisAdapter = socketIoRedis;
+  // global.redis = redis;
+  // global.redisAdapter = socketIoRedis;
   global.adapter = adapter;
   global.gio = io;
   global.redisObject = redisObject;
@@ -131,60 +35,10 @@ logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
 
-redisObject.initRedis();
+redisObject.initRedis(io);
 addToGlobal();
 
-app.enable('trust proxy');
-app.set('trust proxy', 1)
-var session = Session({
-  store: new RedisStore({client: redisObject.getClient()}),
-  secret: 'mysecret',
-  name: 'JSESSIONID',
-  resave: true,
-  saveUninitialized: true
-})
-/*Making sure that load balancing doesnt interfere with socket.io*/
-app.use(cookieParser())
-app.use(session)
-
-/**
- * add folders to virtual namespace
- */
-app.use(express.static('icons'));
-app.use(express.static('res'));
-
-//Enforcing HTTPS, redirects visitor to https if no https has been specified
-app.use (function (req, res, next) {
-  if (req.secure || process.env.BLUEMIX_REGION === undefined) {
-    next();
-  } else {
-    logger.log('info', 'redirecting to https');
-    res.redirect('https://' + req.headers.host + req.url);
-  }
-});
-
-
-app.get('/', function(req, res) {
-	logger.log('info', "Client IP: " + req.connection.remoteAddress)
-  res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io 'unsafe-inline' media-src 'self' blob:");
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-	res.sendFile(__dirname + '/index.html');
-});
-
-app.get('/weblogger', function(req,res) {
-	logger.log('info', "weblogger accessed");
-  res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io")
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-XSS-Protection', '1');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-	res.sendFile(__dirname + '/weblogger.html')
-});
-
-app.get('/favicon.gif', (req,res) => {
-  res.sendFile(__dirname + '/favicon.gif')
-})
+app.init(express,expressApp,redisObject.getClient())
 
 /**
  * handle port on ibmcloud and stay compatible for local development
@@ -315,9 +169,10 @@ async function handlePrivateMessage(data,callback,messageID, userOnline) {
 	logger.log('info', 'callback: ' + callback)
 	messageData = sendMessageWithTimestamp (data,userOnline,callback,messageID)
 	logger.log('info', "private message to " + data.id);
-	var toneAnalyzer =  await analyzeMood(data);
-	logger.log('info', "TYPE" + (typeof toneAnalyzer));
-	messageData.mood = JSON.parse(toneAnalyzer).mood;
+	// var toneAnalyzer =  await analyzeMood(data);
+	// logger.log('info', "TYPE" + (typeof toneAnalyzer));
+	// messageData.mood = JSON.parse(toneAnalyzer).mood;
+  messageData.mood = 'happy'
 	io.to(data.id).emit('clientPrivateMessage', messageData);
 }
 
