@@ -3,6 +3,8 @@ module.exports = (function() {
   const redis = require("redis");
   const cfenv = require('cfenv');
   const socketIoRedis = require('socket.io-redis');
+  //in case an older version of node is used
+  const { URL } = require("url");
   var vcapLocal;
   try {
   vcap = fs.readFileSync("vcaplocal.json");

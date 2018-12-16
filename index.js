@@ -8,7 +8,6 @@
  * requiring modules
  */
 const fs = require("fs");
-const { URL } = require("url");
 const sha256 = require('sha256');
 const request = require('request')
 const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
