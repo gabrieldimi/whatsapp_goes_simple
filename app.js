@@ -45,7 +45,7 @@ module.exports = (function () {
 
         app.get('/weblogger', function(req,res) {
         	logger.log('info', "weblogger accessed");
-          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io")
+          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io script-src style-src")
           res.setHeader('X-Content-Type-Options', 'nosniff');
           res.setHeader('X-XSS-Protection', '1');
           res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');

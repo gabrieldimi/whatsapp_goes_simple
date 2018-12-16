@@ -618,7 +618,7 @@ $(function() {
 		socket.on('userisgone', handleUserisgone)
 		socket.on('loginStatus', handleLoginStatus)
 		ss(socket).on('serverPushMediaFile', handleMediaFile)
-    socket.on('instance', (id) => {document.title += " " + id})
+    socket.on('instance', (id) => {document.title = "Socket.IO chat " + id})
 
 		/* JQUERY-UI */
     //inital creation of the user tab list
