@@ -19,7 +19,7 @@ const app = require('./app.js')
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
-const redisObject = require('./redisAccess.js')
+const redisObject = require('./redisAccess.js')(logger)
 
 function addToGlobal() {
   // global.redis = redis;
@@ -34,7 +34,7 @@ logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
 
-redisObject.initRedis(io);
+redisObject.initRedis(io, logger);
 addToGlobal();
 
 app.init(express,expressApp,redisObject.getClient(), logger)
@@ -186,7 +186,7 @@ async function handlePrivateMessage(data,callback,messageID, userOnline) {
 var handleSendingBinary = (function() {
   //Only needed inside function, thus closure
   function sendToSocket(incomingStream, data, idReceiver, userOnline) {
-      logger.log('info', 'server pushing to ' + idReceiver);
+      logger.log('info', 'server pushing to ', idReceiver);
       console.log(idReceiver)
       var outgoingStream = ss.createStream({
         objectMode: true,
@@ -200,7 +200,10 @@ var handleSendingBinary = (function() {
     logger.log('info', data);
     if(idReceiver) {
       logger.log('info','private mediaTransfer to', idReceiver)
-      sendToSocket(incomingStream, data, io.sockets.connected[idReceiver], userOnline)
+      if(!io.sockets.connected[idReceiver]) {
+        logger.log('warn', `could not find id ${idReceiver} on this instance!`)
+      }
+      sendToSocket(incomingStream, data, idReceiver, userOnline)
     } else {
     	for(var i in io.sockets.connected) {
         // don't send the stream back to the initiator

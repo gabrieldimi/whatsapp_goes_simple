@@ -343,6 +343,7 @@ $(function() {
 
 		// adds a new tab and Panel for every user
 		function addUser(name, id) {
+      console.log(`adding ${name} -> ${id}`);
 			$("#contacts").append(
 					$('<li>').append(
 							$('<a>').attr("href", "#tabs-" + nr).text(name)));
