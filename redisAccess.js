@@ -1,6 +1,5 @@
-module.exports = (function(logger) {
+module.exports = (function(logger, redis) {
   const fs = require('fs');
-  const redis = require("redis");
   const cfenv = require('cfenv');
   const socketIoRedis = require('socket.io-redis');
   //in case an older version of node is used
@@ -89,6 +88,13 @@ module.exports = (function(logger) {
           resolve(JSON.stringify(jsonReply))
         })
       })
+    },
+    'deleteAll': async function() {
+      res = await this.getAll()
+      jRes = JSON.parse(res)
+      for(var key in jRes) {
+        this.deleteUser(key)
+      }
     },
     'getClient': function() {
       return client;

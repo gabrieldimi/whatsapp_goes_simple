@@ -7,6 +7,7 @@
 /**
  * requiring modules
  */
+const args = process.argv;
 const fs = require("fs");
 const sha256 = require('sha256');
 const request = require('request')
@@ -19,11 +20,11 @@ const app = require('./app.js')
 const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
-const redisObject = require('./redisAccess.js')(logger)
+const redis = require("redis");
+require('redis-streams')(redis);
+const redisObject = require('./redisAccess.js')(logger, redis)
 
 function addToGlobal() {
-  // global.redis = redis;
-  // global.redisAdapter = socketIoRedis;
   global.adapter = adapter;
   global.gio = io;
   global.redisObject = redisObject;
@@ -35,18 +36,15 @@ logger.log('info', 'logger running');
 logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
 
 redisObject.initRedis(io, logger);
+const mainClient = redisObject.getClient();
 addToGlobal();
 
-app.init(express,expressApp,redisObject.getClient(), logger)
+app.init(express,expressApp,mainClient, logger)
 
 /**
  * handle port on ibmcloud and stay compatible for local development
  */
 let port = process.env.PORT || 3000;
-/**
- * key-value user database to keep track of active users
- */
-// var users = {};
 var databaseConnection;
 //synchronously
 connectToDB();
@@ -83,8 +81,6 @@ function sendMessageWithTimestamp (data,userOnline,callback,messageID){
   var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
   messageData.time = time;
   messageData.date = date;
-  // callback({"time": time, "date": date},messageID) TODO: figure out why not
-  // working or remove
   return messageData;
 }
 
@@ -131,8 +127,6 @@ logger.log('info', 'analyzed mood...')
 function handleDisconnect(hasRegistrated, userOnline, socket) {
 	if (hasRegistrated) {
 		socket.broadcast.emit("userisgone",userOnline);
-		// users can now register and then login. Now this is only used for active users
-		// delete users[userOnline];
     redisObject.deleteUser(userOnline);
 		logger.log('info', userOnline + ' has been deleted from active users. But not from database');
 	}
@@ -175,6 +169,20 @@ async function handlePrivateMessage(data,callback,messageID, userOnline) {
 	io.to(data.id).emit('clientPrivateMessage', messageData);
 }
 
+io.of('/').adapter.customHook = (data, cb) => {
+  if(io.sockets.connected[data.id]) {
+    cb('FOUND')
+    var outgoingStream = ss.createStream({
+      objectMode: true,
+      highWaterMark: 16384
+    });
+    mainClient.readStream(data.key).pipe(outgoingStream);
+    ss(io.sockets.connected[data.id]).emit('serverPushMediaFile', outgoingStream, data.data, data.userOnline);
+  } else {
+    cb('Not on this process')
+  }
+}
+
 /**
  * Sends media files using streams in order not to save files on the server
  * the server works only as a relay, their is no fishy business going on here, sadly NSA is always watching.
@@ -188,12 +196,22 @@ var handleSendingBinary = (function() {
   function sendToSocket(incomingStream, data, idReceiver, userOnline) {
       logger.log('info', 'server pushing to ', idReceiver);
       console.log(idReceiver)
-      var outgoingStream = ss.createStream({
-        objectMode: true,
-        highWaterMark: 16384
+      // var outgoingStream = ss.createStream({
+      //   objectMode: true,
+      //   highWaterMark: 16384
+      // });
+      // ss(idReceiver).emit('serverPushMediaFile', outgoingStream, data, userOnline);
+      // incomingStream.pipe(outgoingStream);
+      incomingStream.pipe(mainClient.writeStream('THEKEY', 100)).on('finish', () => {console.log('done writing stream to redis')});
+      var jsonData = {
+        'id': idReceiver,
+        'key': 'THEKEY',
+        'userOnline': userOnline,
+        'data': data
+      }
+      io.of('/').adapter.customRequest(jsonData, function(err, replies){
+        console.log(replies);
       });
-      ss(idReceiver).emit('serverPushMediaFile', outgoingStream, data, userOnline);
-      incomingStream.pipe(outgoingStream);
   }
 
   return function(incomingStream, data, socket, idReceiver, userOnline) {
@@ -549,9 +567,6 @@ function doUserCredentialsFit(userName,passwordHash){
  * @param {OBJECT} socket
  */
 async function informUsers(name, answer,userInfo,socket) {
-	// var pair = {};
-	// users[name] = pair;
-	// pair.connection = socket.id;
   redisObject.addUser(name, socket.id);
 	userInfo.userOnline = name;
 	userInfo.hasRegistrated = true;
