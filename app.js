@@ -36,7 +36,7 @@ module.exports = (function () {
 
         app.get('/', function(req, res) {
         	logger.log('info', "Client IP: " + req.connection.remoteAddress)
-          res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io localhost:* chat.local:* *.mybluemix.net ws: 'unsafe-inline' blob:");
+          // res.setHeader('Content-Security-Policy', "default-src 'self' *.jquery.com *.socket.io localhost:* chat.local:* *.mybluemix.net *.*.mybluemix.net ws: 'unsafe-inline' blob:");
           res.setHeader('X-Content-Type-Options', 'nosniff');
           res.setHeader('X-XSS-Protection', '1');
           res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')

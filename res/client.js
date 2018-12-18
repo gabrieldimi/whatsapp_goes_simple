@@ -27,7 +27,7 @@ $(function() {
 
 		//Globals
 		var socket = io();
-    var videoSocket = io('chat.local:5000')
+    var videoSocket = io('https://hsrtmediaservice.eu-de.mybluemix.net')
 		/*
 		 * Hashmap containing info about all currently known logged in users.
 		 * Structure: {
@@ -262,7 +262,7 @@ $(function() {
 					messageObj.date = timestamp.date;
 					messageObj.time = timestamp.time;
 					messageObj.mediaElem = mediaElem;
-					if(idSender) {
+					if(idSender && hashmap[idSender]) {
 						hashmap[idSender].panel.find(".privateMessage").append(formatMessage(messageObj, 'recipientMessage').attr('id', "sent-" + currentMessageID));
 					} else {
 						$('#messages').append(formatMessage(messageObj, 'recipientMessage').attr('id', "sent-" + currentMessageID));
@@ -301,7 +301,7 @@ $(function() {
 				objectMode: true,
 				highWaterMark: 16384
 			});
-
+      console.log('emitting "sendingbinary" to ' + currentSID)
 			ss(videoSocket).emit('sendingbinary', stream, {
 	      size : file.size,
 				name : file.name,
