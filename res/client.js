@@ -27,6 +27,7 @@ $(function() {
 
 		//Globals
 		var socket = io();
+    var videoSocket = io('chat.local:5000')
 		/*
 		 * Hashmap containing info about all currently known logged in users.
 		 * Structure: {
@@ -301,7 +302,7 @@ $(function() {
 				highWaterMark: 16384
 			});
 
-			ss(socket).emit('sendingbinary', stream, {
+			ss(videoSocket).emit('sendingbinary', stream, {
 	      size : file.size,
 				name : file.name,
 				type: file.type
@@ -618,8 +619,13 @@ $(function() {
 		socket.on('newuser', handleNewuser);
 		socket.on('userisgone', handleUserisgone)
 		socket.on('loginStatus', handleLoginStatus)
-		ss(socket).on('serverPushMediaFile', handleMediaFile)
+		ss(videoSocket).on('serverPushMediaFile', handleMediaFile)
     socket.on('instance', (id) => {document.title = "Socket.IO chat " + id})
+    videoSocket.on('connect', function() {
+      console.log('emitting chatsid to service, ' + socket.id)
+      videoSocket.emit('mapid', socket.id);
+    })
+
 
 		/* JQUERY-UI */
     //inital creation of the user tab list
