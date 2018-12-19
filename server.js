@@ -7,11 +7,9 @@
 /**
  * requiring modules
  */
-const fs = require("fs");
 const sha256 = require('sha256');
 const request = require('request')
 const VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
-const ibmdb = require('ibm_db');
 const express = require('express')
 const expressApp = express();
 const http = require('http').Server(expressApp);
@@ -20,6 +18,7 @@ const io = require('socket.io')(http);
 const ss = require('socket.io-stream');
 const logger = require('./log.js')
 const redisObject = require('./redisAccess.js')(logger)
+const dbAccess = require('./dbAccess.js')(logger)
 
 function addToGlobal() {
   // global.redis = redis;
@@ -43,13 +42,8 @@ app.init(express,expressApp,redisObject.getClient(), logger)
  * handle port on ibmcloud and stay compatible for local development
  */
 let port = process.env.PORT || 3000;
-/**
- * key-value user database to keep track of active users
- */
-// var users = {};
-var databaseConnection;
 //synchronously
-connectToDB();
+dbAccess.connectToDB();
 
 
 /**
@@ -294,11 +288,11 @@ async function handleRegistration(imageStream,registrationData, userInfo, socket
 
 			if(re.test(name)) {
 
-				var queryResult = await doesUserExist(name);
+				var queryResult = await dbAccess.doesUserExist(name);
 				//checking if user exists and if it is right user
 				if (!queryResult) {
 					logger.log('info', name + ' is registered');
-					var additionResult = addUserToDB(name,passwordHash);
+					var additionResult = dbAccess.addUserToDB(name,passwordHash);
 					logger.log("info", "result of adding user:",additionResult);
 					await informUsers(name,answer,userInfo,socket);
 					answer.msg = `Welcome ${name}`;
@@ -335,7 +329,7 @@ async function handleLogin(loginData, userInfo, socket){
 	var passwordHash = sha256(loginData.password);
 	// logger.log("info",`password plain text = ${loginData.password}`);
 	logger.log("warn",`passwordHash by login= '${passwordHash}'`);
-	var queryResult = await doUserCredentialsFit(name,passwordHash);
+	var queryResult = await dbAccess.doUserCredentialsFit(name,passwordHash);
   var exists = await redisObject.exists(name);
 	if(!exists){
 		if(queryResult){
@@ -395,99 +389,7 @@ io.on('connection', function(socket) {
   socket.emit('instance', process.env.CF_INSTANCE_INDEX)
 });
 
-/**
- * Handles a synchronous connection of server to ibm database
- * Connection is opened via credentials found in DBcredentials.json
- */
-function connectToDB(){
-	logger.log('info', "Accessing the ibm database");
 
-	var credentialsUnparsed = fs.readFileSync("DBcredentials.json");
-	var credentialsParsed = JSON.parse(credentialsUnparsed);
-
-    var connstring;
-    if(process.env.BLUEMIX_REGION === undefined) {
-      //DATABASE=database;HOSTNAME=hostname;PORT=port;PROTOCOL=TCPIP;UID=username;PWD=passwd;Security=SSL;SSLServerCertificate=<cert.arm_file_path>;
-      connstring = `DRIVER={DB2};DATABASE=${credentialsParsed.db};UID=${credentialsParsed.username};PWD=${credentialsParsed.password};HOSTNAME=${credentialsParsed.hostname};PORT=${credentialsParsed.port}`
-    } else {
-      //making sure there is a secure connection to the databse when running on remote server
-      connstring = credentialsParsed.ssldsn;
-	}
-
-	try{
-		var option = { connectTimeout : 40, systemNaming : true };// Connection Timeout after 40 seconds.
-		databaseConnection = ibmdb.openSync(connstring,option);
-		logger.log('info', `Database connection is made`,databaseConnection);
-
-	}catch (e) {
-	    // 	On error in connection, log the error message on console
-		logger.log("error",e.message);
-	}
-}
-
-
-/**
- * Checks if the user with a specific name is already saved in the database
- * @param {String} userName
- */
-function doesUserExist(userName){
-	return new Promise(function (resolve, reject) {
-		databaseConnection.query(`select userid from Users where USERID='${userName}'`, function(err,result, moreresults){
-			logger.log("info", "callback of search user");
-			if(err){
-				logger.log('error', err);
-				reject(err);
-			}else{
-				logger.log('info', `does user exist ${result[0]}`);
-				logger.log('info', `more results: ${moreresults}`);
-				resolve(result[0]);
-			}
-		});
-	}).catch((error) => {
-    logger.log('error', error);
-  });
-
-}
-/**
- * Handles adding users with name and password to the database, using a query request
- * @param {String} userName
- * @param {String} passwordHash
- */
-function addUserToDB(userName,passwordHash){
-	return new Promise(function (resolve, reject) {
-		databaseConnection.query(`insert into Users values('${userName}','${passwordHash}');`,function(err,result){
-			logger.log("info", "callback of add user");
-			if(err){
-				logger.log('error', err);
-				reject(err);
-			}else{
-				logger.log('info', `adding user: ${userName}`);
-				resolve(result);
-			}
-		});
-	}).catch((error) => {
-    logger.log('error', error);
-  });
-}
-/**
- * Checks database for a specific user with corresponding password.
- * @param {*} userName
- * @param {*} passwordHash
- */
-function doUserCredentialsFit(userName,passwordHash){
-	return new Promise(function (resolve, reject) {
-		databaseConnection.query(`select userid, password from Users where USERID='${userName}' and PASSWORD='${passwordHash}';`,function(err,result,moreresults){
-			logger.log("info", "callback of searching for a user with specific password");
-			if(err){
-				logger.log('error', err);
-				reject(err);
-			}else{
-				logger.log('info', `${userName} with corresponding password exists.`);
-				resolve(result[0]);
-			}
-		});
-	});
-}
 /**
  * Uses visual recognition service to detect if a image is truely matches a human face
  * @param {*} imageStream
