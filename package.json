@@ -24,7 +24,7 @@
   },
   "scripts": {
     "watch": "nodemon server.js",
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "contributors": [
     {

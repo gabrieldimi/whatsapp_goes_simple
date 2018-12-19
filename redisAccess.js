@@ -18,6 +18,9 @@ module.exports = (function(logger) {
   var hashset = 'users';
 
   return {
+    /*
+    * Initializing the connection to redis using the environment variable to authenticate.
+    */
     'initRedis': function(io,logger) {
       //TODO: logger
       logger.log('info', 'INIT OF REDIS');
@@ -60,9 +63,10 @@ module.exports = (function(logger) {
         logger.log('info', "Error " + err);
         logger.log('info', 'reconnecting client')
       });
-
+      //Adding an adapter to socket.io so that all messages are routed through redis
       adapter = io.adapter(socketIoRedis({pubClient: pub, subClient: sub }));
     },
+    //adding a user to redis, where the username is the key and the socketid is the value
     'addUser': function(name, value) {
       ret = client.hset(hashset, name, value);
       logger.log('info', `adding user ${name} to redis. ret ${ret}`)
@@ -70,9 +74,11 @@ module.exports = (function(logger) {
         console.error("could not set key due to error or redis client being undefined")
       }
     },
+    //deleting a user from redis that isnt needed anymore
     'deleteUser': function(name) {
       client.hdel(hashset, name)
     },
+    //Testing if a user is present in redis
     'exists': function(name) {
       return new Promise(function(resolve, reject) {
         ret = client.hget(hashset, name, function(err,reply) {
@@ -82,6 +88,7 @@ module.exports = (function(logger) {
         logger.log('info', `ret ${ret}`)
       });
     },
+    /*function to return all users currently logged in and known to redis*/
     'getAll': function() {
       return new Promise(function(resolve, reject) {
         client.hgetall(hashset, (err, jsonReply) => {
@@ -90,6 +97,7 @@ module.exports = (function(logger) {
         })
       })
     },
+    //gettin the client for other modules
     'getClient': function() {
       return client;
     }
