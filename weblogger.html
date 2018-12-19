@@ -62,10 +62,12 @@ html, body {
         btnCPU = document.getElementById('getCPU');
         btnMemory = document.getElementById('getMemory')
         btnUptime = document.getElementById('getUptime')
+        btnLogAllOut = document.getElementById('logAllUsersOut')
 
         btnCPU.addEventListener('click', () => socket.emit('cpu'));
         btnMemory.addEventListener('click', () => socket.emit('memory'));
         btnUptime.addEventListener('click', () => socket.emit('uptime'));
+        btnLogAllOut.addEventListener('click', () => socket.emit('logAllOut'))
     })
 </script>
 </head>
@@ -74,6 +76,7 @@ html, body {
     <button id='getCPU'>Get CPU</button>
     <button id='getMemory'>Get memoryUsage</button>
     <button id='getUptime'>Get uptime</button>
+    <button id='logAllUsersOut'>Log all users out</button>
     </div>
     <div id='logContainer'>
       <ul id="loglist">

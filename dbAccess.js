@@ -96,6 +96,19 @@ module.exports = (function(logger) {
     			}
     		});
     	});
+    },
+    'deleteAll': function() {
+      return new Promise(function(resolve, reject) {
+        	databaseConnection.query('delete * from users', function(err,results) {
+            if(err) {
+              logger.log('error', err);
+      				reject(err);
+            } else {
+              logger.log('info', 'all users deleted from SQL database');
+      				resolve(result[0]);
+            }
+          })
+      })
     }
   }
 });

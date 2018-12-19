@@ -21,14 +21,13 @@ const redisObject = require('./redisAccess.js')(logger)
 const dbAccess = require('./dbAccess.js')(logger)
 
 function addToGlobal() {
-  // global.redis = redis;
-  // global.redisAdapter = socketIoRedis;
   global.adapter = adapter;
   global.gio = io;
   global.redisObject = redisObject;
 }
 
-
+var socketWeblogger = io.of('/weblogger');
+logger.init(socketWeblogger);
 logger.debugLevel = 'error';
 logger.log('info', 'logger running');
 logger.log('info', `CF_INSTANCE_INDEX: ${process.env.CF_INSTANCE_INDEX}`)
@@ -350,23 +349,6 @@ async function handleLogin(loginData, userInfo, socket){
 
 	socket.emit('loginStatus',answer);
 }
-
-var socketWeblogger = io.of('/weblogger');
-socketWeblogger.on('connection',function(socket) {
-	logger.log('info', 'weblogger listening')
-  socket.on('cpu', () => {
-    socketWeblogger.to(socket.id).emit('cpu_answer', process.cpuUsage());
-  })
-
-  socket.on('memory', () => {
-    socketWeblogger.to(socket.id).emit('memory_answer', process.memoryUsage());
-  })
-
-  socket.on('uptime', () => {
-    socketWeblogger.to(socket.id).emit('uptime_answer', process.uptime());
-  })
-});
-logger.socket = socketWeblogger;
 
 
 /* handling socket.io processes, which includes event management, callbacks and message transfer */

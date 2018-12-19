@@ -97,6 +97,13 @@ module.exports = (function(logger) {
         })
       })
     },
+    'logAllOut': async function() {
+      res = await this.getAll();
+      jRes = JSON.parse(res)
+      for(var key in jRes) {
+        this.deleteUser(key)
+      }
+    },
     //gettin the client for other modules
     'getClient': function() {
       return client;
