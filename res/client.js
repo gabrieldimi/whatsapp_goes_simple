@@ -258,7 +258,7 @@ $(function() {
 					var messageObj = {}
 					messageObj.payload = '';
 					messageObj.userName = selfName;
-					var timestamp = getTimeStamp()
+					var timestamp = getTimeStamp() //TODO: get timestamp from server
 					messageObj.date = timestamp.date;
 					messageObj.time = timestamp.time;
 					messageObj.mediaElem = mediaElem;
@@ -293,21 +293,69 @@ $(function() {
 			return messageID++;
 		}
 
+    var transferFileQueue = (function() {
+
+      var queue = [];
+      var inProgress = false;
+      function doTransmit(file) {
+        console.log('starting transmission of ', file)
+        inProgress = true;
+        //stream needs to be in objectMode to transfer files bigger than 16KiB
+        var stream = ss.createStream({
+          objectMode: true,
+          highWaterMark: 16384
+        });
+        blobStream = ss.createBlobReadStream(file);
+
+        stream.on('end', function() {
+          console.log('finished transmission of file ', file)
+          var currentFile = queue.shift();
+          if(currentFile) {
+            doTransmit(currentFile)
+          } else {
+            inProgress = false;
+          }
+        })
+
+        //FIXME: experimental
+        function transmitCallback(file) {
+          console.log('callback from server for file: ', file)
+        }
+
+        console.log('emitting "sendingbinary" to ' + currentSID)
+        ss(videoSocket).emit('sendingbinary', stream, {
+          size : file.size,
+          name : file.name,
+          type: file.type
+        }, currentSID, transmitCallback);
+        blobStream.pipe(stream);
+      }
+
+      return {
+          'update': function(file) {
+            queue.push(file)
+            if(!inProgress) {
+              doTransmit(queue.shift());
+            }
+          }
+      }
+    }())
+
+
+
     //Invoked when file is dropped in dropzone, starting the transmison of the file
-		function handleFiles(file) {
-			console.log(file)
-      //stream needs to be in objectMode to transfer files bigger than 16KiB
-			var stream = ss.createStream({
-				objectMode: true,
-				highWaterMark: 16384
-			});
-      console.log('emitting "sendingbinary" to ' + currentSID)
-			ss(videoSocket).emit('sendingbinary', stream, {
-	      size : file.size,
-				name : file.name,
-				type: file.type
-			}, currentSID);
-			ss.createBlobReadStream(file).pipe(stream)
+		function handleFiles(files) {
+			console.log(files)
+      for(var i = 0; i < files.length; i++) {
+        var file = files[i];
+        console.log("LOOPING OVER FILELIST: ", file);
+        var mediaElem = buildMediaElem(file.type);
+        url = URL.createObjectURL(file);
+        mediaElem.src = url;
+        appendToActiveTab('',mediaElem); //FIXME: empty parameter
+        transferFileQueue.update(file)
+      }
+
 		}
 
 		// Prevent Default Handling for these events, i.e. opening the dropped
@@ -329,17 +377,8 @@ $(function() {
 
     //Listener for the filedrop event
 		dropArea.addEventListener('drop', function(e) {
-			console.log(e.dataTransfer.files);
-
-			for(var i = 0; i < e.dataTransfer.files.length; i++) {
-				var file = e.dataTransfer.files[i];
-				console.log("LOOPING OVER FILELIST: ", file);
-				var mediaElem = buildMediaElem(file.type);
-				url = URL.createObjectURL(file);
-				mediaElem.src = url;
-				appendToActiveTab('',mediaElem); //FIXME: empty parameter
-				handleFiles(file) // TODO: move loop to receiver
-			}
+			console.log('files to transfer:', e.dataTransfer.files);
+			handleFiles(e.dataTransfer.files) // TODO: move loop to receiver
 		});
 
 		// adds a new tab and Panel for every user
@@ -462,9 +501,6 @@ $(function() {
 					var messageObj = {}
 					messageObj.payload = $('#m').val()
 					messageObj.userName = selfName;
-					var timestamp = getTimeStamp()
-					messageObj.date = timestamp.date;
-					messageObj.time = timestamp.time;
 					if (currentSID !== undefined) { // if not Global selected
 						socket.emit('privatemessage', {
 							'id' : currentSID,
@@ -477,8 +513,12 @@ $(function() {
 							emitName : "chat message",
 							payload : $('#m').val(),
 							"callback": callback
-						}, callback, currentMessageID);
-						$('#messages').append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
+						}, currentMessageID, function(serverdate, servertime) {
+              console.log('timestamp callback from server for messageID ', currentMessageID, serverdate, servertime);
+              messageObj.date = serverdate;
+              messageObj.time = servertime;
+              $('#messages').append(formatMessage(messageObj, 'senderMessage').attr('id', "sent-" + currentMessageID));
+            });
 					}
 					$('#m').val('')
 					scrollToBottom();
@@ -494,7 +534,7 @@ $(function() {
 					var messageObj = {}
 					messageObj.payload = '';
 					messageObj.userName = selfName;
-					var timestamp = getTimeStamp()
+					var timestamp = getTimeStamp() //TODO: get timestamp from server
 					messageObj.date = timestamp.date;
 					messageObj.time = timestamp.time;
 					messageObj.mediaElem = mediaElem;

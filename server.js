@@ -44,7 +44,7 @@ let port = process.env.PORT || 3000;
 //synchronously
 dbAccess.connectToDB();
 
-
+//FIXME: not called by any function anymore?
 /**
  * this is a beauty function for adding a zero to the minutes of the server time
  * @param {Object} dateObject
@@ -66,7 +66,7 @@ function addLeadingZeroToMinutes(dateObject){
  * @param {Function} callback
  * @param {String} messageID
  */
-function sendMessageWithTimestamp (data,userOnline,callback,messageID){
+function sendMessageWithTimestamp (data,userOnline,messageID){
   var messageData = {};
   messageData.userName = userOnline;
   messageData.payload = data.payload;
@@ -76,8 +76,6 @@ function sendMessageWithTimestamp (data,userOnline,callback,messageID){
   var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
   messageData.time = time;
   messageData.date = date;
-  // callback({"time": time, "date": date},messageID) TODO: figure out why not
-  // working or remove
   return messageData;
 }
 
@@ -141,11 +139,10 @@ function handleDisconnect(hasRegistrated, userOnline, socket) {
  * @param {String} userOnline
  * @param {Object} socket
  */
-function handleBroadcast(data, callback,messageID, userOnline, socket){
-	logger.log('info', callback);
+function handleBroadcast(data,messageID, userOnline, socket){
 	logger.log('info', messageID)
 	logger.log('info', "broadcast: " + userOnline + ": " + data.payload);
-	var messageData = sendMessageWithTimestamp (data,userOnline,callback,messageID);
+	var messageData = sendMessageWithTimestamp (data,userOnline,messageID);
     socket.broadcast.emit(data.emitName, messageData);
 }
 
@@ -158,8 +155,7 @@ function handleBroadcast(data, callback,messageID, userOnline, socket){
  * @param {String} userOnline
  */
 async function handlePrivateMessage(data,callback,messageID, userOnline) {
-	logger.log('info', 'callback: ' + callback)
-	messageData = sendMessageWithTimestamp (data,userOnline,callback,messageID)
+	messageData = sendMessageWithTimestamp (data,userOnline,messageID)
 	logger.log('info', "private message to " + data.id);
 	// var toneAnalyzer =  await analyzeMood(data);
 	// logger.log('info', "TYPE" + (typeof toneAnalyzer));
@@ -363,7 +359,13 @@ io.on('connection', function(socket) {
 	socket.on('login', (loginData) => handleLogin(loginData,userInfo,socket));
 	socket.on('chat message', (msg) => handleChatMessage(msg));
 	socket.on('disconnect', () => handleDisconnect(userInfo.hasRegistrated, userInfo.userOnline, socket));
-	socket.on('broadcast', (data, callback,messageID) => handleBroadcast(data, callback,messageID, userInfo.userOnline, socket));
+	socket.on('broadcast', function(data,messageID, cb) {
+    handleBroadcast(data,messageID, userInfo.userOnline, socket)
+    var dateObj = new Date();
+    var time = dateObj.getHours() + ":" + dateObj.getMinutes();
+    var date = dateObj.getUTCFullYear() + "-" + (dateObj.getUTCMonth() +1) + "-" + dateObj.getDate();
+    cb(date,time)
+  });
 	socket.on('privatemessage', (data,callback,messageID) => handlePrivateMessage(data,callback,messageID, userInfo.userOnline));
 	socket.on('privateUpload', (data, filename) => handlePrivateUpload(data, filename))
 	socket.on('upload', (filename) => handleUpload(filename, socket, userInfo.userOnline))
